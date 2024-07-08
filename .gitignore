@@ -3,6 +3,12 @@ __pycache__/
 *.py[cod]
 *$py.class
 
+# My folders
+db_backups/
+drivers/
+results/
+*.db
+
 # C extensions
 *.so
 

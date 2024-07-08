@@ -1,0 +1,39 @@
+{
+    "ENABLE_MP": true,
+    "MP_N_CORES": 4,
+    "DB_NAME": "latinframe.db",
+    
+    "DRIVER_BROWSER": "chrome",
+    "DRIVER_WAIT_TIME": 8,
+    
+    "UI_WIDTH": 1300,
+    "UI_HEIGHT": 500,
+    
+    "NEWS_SAVE_HTML": false,
+    
+    "PRODUCTS_N_PRODUCTS_FETCH": 10,
+    "PRODUCTS_MELI_FETCH": true,
+    "PRODUCTS_ALIBABA_FETCH": true,
+    "PRODUCTS_EBAY_FETCH": true,
+    "PRODUCTS_ADD_CHANNEL_NAMES": false,
+    
+    "SIMILARWEB_N_WEBS_FETCH": 10,
+    "SIMILARWEB_SKIP_SCRAP": false,
+    "SIMILARWEB_DELAY": 8,
+    
+    "YOUTUBE_API_KEY": "YoutTubeAPIKey",
+    "YOUTUBE_API_N_VIDEOS_FETCH": 10,
+    "YOUTUBE_API_PAGE_RESULTS": 50,
+    
+    "YOUTUBE_CHANNEL_SAVE_HTML": true,
+    "YOUTUBE_CHANNEL_N_VIDEOS_FETCH": 10,
+    "YOUTUBE_CHANNEL_FETCH_VIDEOS": true,
+    "YOUTUBE_CHANNEL_FETCH_PLAYLISTS": true,
+    "YOUTUBE_CHANNEL_FETCH_SHORTS": true,
+    
+    "YOUTUBE_VIDEO_SAVE_HTML": true,
+    
+    "EMAIL_ADRESS" : "name.surname@platform.com",
+    "EMAIL_PASSWORD" : "password",
+    "EMAIL_PLATFORM" : "platform"
+}
