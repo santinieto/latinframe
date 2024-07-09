@@ -11,10 +11,10 @@ from datetime import timedelta, datetime
 from pathlib import Path
 import time
 
-from src.utils.logger import Logger
+from src.logger.logger import Logger
 
 # Crear un logger
-logger = Logger().get_logger()
+logger = Logger(os.path.basename(__file__)).get_logger()
 
 # Variables globables
 HEADER = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/112.0.0.0 Safari/537.36'
@@ -240,6 +240,7 @@ def getenv(var_name, default_value):
     
     # Si la variable de entorno no existe, devolver el valor por defecto
     if value is None:
+        logger.warning(f'No se encontro la variable de entorno [{var_name}], se usara el valor por defecto [{default_value}].')
         return default_value
     
     # Intentar convertir el valor usando las funciones de conversión

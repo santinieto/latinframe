@@ -1,7 +1,6 @@
 # Librerias que voy a necesitar
 from googleapiclient.discovery import build
 from googleapiclient.errors    import HttpError
-import os
 import json
 from datetime import datetime
 import pandas   as pd
@@ -12,10 +11,11 @@ from src.utils.utils import transform_duration_format
 from src.utils.utils import safe_get_from_json
 from src.utils.utils import cprint
 from src.utils.utils import getenv
-from src.utils.logger import Logger
+from src.logger.logger import Logger
+import os
 
 # Crear un logger
-logger = Logger().get_logger()
+logger = Logger(os.path.basename(__file__)).get_logger()
 
 # Creo la clase para levantar la API
 class YoutubeAPI:

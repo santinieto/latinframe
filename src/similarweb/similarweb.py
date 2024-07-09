@@ -6,12 +6,13 @@ from pytube import YouTube
 from datetime import datetime
 from bs4 import BeautifulSoup
 
-from src.utils.logger import Logger
+from src.logger.logger import Logger
 from src.utils.utils import get_formatted_date
 from src.utils.utils import get_similarweb_url_tuple
+from src.utils.utils import getenv
 
 # Crear un logger
-logger = Logger().get_logger()
+logger = Logger(os.path.basename(__file__)).get_logger()
 
 class SimilarWebTopWebsitesTable:
     ############################################################################
@@ -19,12 +20,14 @@ class SimilarWebTopWebsitesTable:
     ############################################################################
     # Valores por defecto para los atributos de la clase
     
+    DEFAULT_SAVE_HTML = True
     BASE_URL = 'https://www.similarweb.com/'
     DEFAULT_FILENAME = 'html_top_websites.dat'
     
     def __init__(self, filename=None):
         self.filename = filename or self.DEFAULT_FILENAME
         self.row_data = []
+        self.save_html = getenv('SIMILARWEB_SAVE_HTML', self.DEFAULT_SAVE_HTML)
         self.html_content = ''
         self.data_loaded = False
         self.fetch_status = False
@@ -103,7 +106,7 @@ class SimilarWebTopWebsitesTable:
                 return False
 
             # Si se necesita guardar el HTML
-            if self.SAVE_HTML:
+            if self.save_html:
                 self.save_html_content()
 
             # Obtengo los datos
@@ -391,7 +394,7 @@ class SimilarWebWebsite:
                 return False
 
             # Si se necesita guardar el HTML
-            if self.SAVE_HTML:
+            if self.save_html:
                 self.save_html_content()
 
             # Crear el diccionario para los datos

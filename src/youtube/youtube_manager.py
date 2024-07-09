@@ -1,17 +1,18 @@
 from src.youtube.youtube_channel import YoutubeChannel
 from src.youtube.youtube_video import YoutubeVideo
 from src.youtube.youtube_api import YoutubeAPI
-from src.utils.logger import Logger
+from src.logger.logger import Logger
 from src.database.db import Database
 from src.utils.utils import is_url_arg
 from src.utils.utils import getenv
 from functools import partial
 from multiprocessing import Pool, cpu_count
+import os
 
 ################################################################################
 # Crear un logger
 ################################################################################
-logger = Logger().get_logger()
+logger = Logger(os.path.basename(__file__)).get_logger()
 
 ################################################################################
 # Define tu función de inicialización de canal independiente
@@ -117,9 +118,9 @@ class YoutubeManager:
     _instance = None
 
     # Configuraciones por defecto
-    ENABLE_MP = getenv('ENABLE_MP', True)
-    N_CORES = getenv('MP_N_CORES', -1)
-    DB_NAME = getenv('DB_NAME', "latinframe.db")
+    DEFAULT_ENABLE_MP = getenv('ENABLE_MP', True)
+    DEFAULT_N_CORES = getenv('MP_N_CORES', -1)
+    DEFAULT_DB_NAME = getenv('DB_NAME', "latinframe.db")
     DEBUG = True
 
     ############################################################################
@@ -139,6 +140,8 @@ class YoutubeManager:
             self.channel_ids = channel_ids
             self.channels = []
             self.videos = []
+            self.enable_mp = getenv('ENABLE_MP', self.DEFAULT_ENABLE_MP)
+            self.db_name = getenv('DB_NAME', self.DEFAULT_DB_NAME)
             self.n_cores = self.set_n_cores()
             self.load_channels_from_database = load_channels_from_database
             self.load_videos_from_database = load_videos_from_database
@@ -147,7 +150,7 @@ class YoutubeManager:
             self.youtube_api = self.initialize_youtube_api()
 
             # Inicializar el objeto Pool para el procesamiento paralelo
-            if self.ENABLE_MP:
+            if self.enable_mp:
                 self.pool = Pool(processes=self.n_cores)
             else:
                 self.pool = None
@@ -180,7 +183,7 @@ class YoutubeManager:
             f"- Número de canales a analizar: {len(self.channel_ids)}\n"
             f"- IDs de los canales a analizar: {self.channel_ids}\n"
             f"- Número de núcleos a utilizar (solo si se usa multithreading): {self.n_cores}\n"
-            f"- Nombre de la base de datos: {self.DB_NAME}\n"
+            f"- Nombre de la base de datos: {self.db_name}\n"
             f"- {youtube_api_msg}\n"
             f"- {database_msg}\n"
             f"- Youtube Manager listo para operar: {self.initialized}"
@@ -192,13 +195,13 @@ class YoutubeManager:
         Obtiene el número de procesos a utilizar según la configuración.
         """
         max_n_cores = cpu_count()
-        if self.N_CORES < 0:
+        if getenv('MP_N_CORES', self.DEFAULT_N_CORES) < 0:
             return max_n_cores
         else:
-            if self.N_CORES > max_n_cores:
+            if getenv('MP_N_CORES', self.DEFAULT_N_CORES) > max_n_cores:
                 return max_n_cores
             else:
-                return self.N_CORES
+                return getenv('MP_N_CORES', self.DEFAULT_N_CORES)
 
     def initialize_youtube_api(self):
         """
@@ -216,7 +219,7 @@ class YoutubeManager:
         """
         try:
             # Crear una instancia de Database y abrir la base de datos
-            return Database(self.DB_NAME)
+            return Database(self.db_name)
         except Exception as e:
             # Manejar el error al abrir la base de datos
             logger.error(f'Error al inicializar la base de datos. Error: {e}.')
@@ -255,11 +258,13 @@ class YoutubeManager:
         Utiliza multiprocessing para inicializar los canales en paralelo si ENABLE_MP es True,
         de lo contrario, inicializa los canales de forma serial.
         """
-        if self.ENABLE_MP:
-            logger.info('Inicializando canales de Youtube en paralelo')
+        if self.enable_mp:
+            if self.DEBUG:
+                logger.info('Inicializando canales de Youtube en paralelo')
             self.parallel_channel_initialize()
         else:
-            logger.info('Inicializando canales de Youtube en serie')
+            if self.DEBUG:
+                logger.info('Inicializando canales de Youtube en serie')
             self.serial_channel_initialize()
 
     def parallel_channel_initialize(self):
@@ -307,7 +312,7 @@ class YoutubeManager:
             # Obtengo la lista de IDs para el canal actual
             video_id_list = channel.video_id_list
             
-            if self.ENABLE_MP:
+            if self.enable_mp:
                 logger.info('Inicializando videos de Youtube en paralelo')
                 self.parallel_video_initialize(video_id_list)
             else:
@@ -434,7 +439,8 @@ class YoutubeManager:
         # Llamar al método insert_channel_record() de la base de datos y pasar el diccionario como argumento
         try:
             self.database.insert_channel_record(channel_data)
-            logger.info(f"Datos del canal '{channel.channel_id}' insertados en la base de datos.")
+            if self.DEBUG:
+                logger.info(f"Datos del canal '{channel.channel_id}' insertados en la base de datos.")
         except Exception as e:
             logger.error(f"Error al insertar datos del canal '{channel.channel_id}' en la base de datos: {str(e)}")
     

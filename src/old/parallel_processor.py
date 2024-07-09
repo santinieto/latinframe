@@ -6,7 +6,7 @@ from functools import partial
 try:
     from src.logger import Logger
 except:
-    from logger import Logger
+    from src.logger.logger import Logger
 
 # Crear un logger
 logger = Logger().get_logger()

@@ -8,10 +8,10 @@ from src.database.db_clean import *
 from src.utils.utils import get_formatted_date
 from src.utils.utils import get_dir_files
 from src.utils.utils import get_newest_file
-from src.utils.logger import Logger
-
+from src.logger.logger import Logger
+    
 # Crear un logger
-logger = Logger().get_logger()
+logger = Logger(os.path.basename(__file__)).get_logger()
 
 def youtube_db_fetch():
     current_time = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')

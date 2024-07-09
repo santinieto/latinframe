@@ -7,6 +7,7 @@ def menu_backups(app):
     Args:
         app: La instancia de la aplicación de la interfaz gráfica.
     """
+    logger.info('Menu de backups de la base de datos.')
     try:
         app.screen()  # Limpia la pantalla
         app.add_option("Generar Backup", lambda: sql_generate_db_backup())

@@ -2,11 +2,12 @@ import tkinter as tk
 from tkinter import ttk
 import sys, os
 from src.utils.utils import getenv
-from src.utils.logger import Logger, InfoFormatter, ErrorFormatter
+from src.logger.logger import Logger
+from src.logger.logger_classes import InfoFormatter, ErrorFormatter
 import logging
 
 # Crear un logger
-logger = Logger().get_logger()
+logger = Logger(os.path.basename(__file__)).get_logger()
 
 def get_app():
     root = tk.Tk()
@@ -49,14 +50,10 @@ class LatinframeGUI(tk.Frame):
     _instance = None
     
     # Definición de colores
-    UI_WHITE = '#d8e9f0'  # Color blanco para la interfaz
-    UI_GRAY = '#33425b'   # Color gris oscuro para la interfaz
-    UI_RED = '#f33535'    # Color rojo para resaltar botones
-    UI_BLACK = '#29252c'  # Color negro para textos y elementos oscuros
-    
-    BG_COLOR = UI_BLACK
-    BTN_BG_COLOR = UI_RED
-    BTN_FONT_COLOR = UI_WHITE
+    DEFAULT_UI_WHITE = '#d8e9f0'  # Color blanco para la interfaz
+    DEFAULT_UI_GRAY = '#33425b'   # Color gris oscuro para la interfaz
+    DEFAULT_UI_RED = '#f33535'    # Color rojo para resaltar botones
+    DEFAULT_UI_BLACK = '#29252c'  # Color negro para textos y elementos oscuros
 
     def __new__(cls, master=None):
         """
@@ -88,17 +85,24 @@ class LatinframeGUI(tk.Frame):
         self.initialized = True
     
         # Valores por defecto
-        self.WIDTH = int(getenv('UI_WIDTH', 1000))
-        self.HEIGHT = int(getenv('UI_HEIGHT', 500))
+        self.width = int(getenv('UI_WIDTH', 1000))
+        self.heigth = int(getenv('UI_HEIGHT', 500))
+        
+        self.bg_color = getenv('UI_BLACK', self.DEFAULT_UI_BLACK)
+        self.font_color = getenv('UI_WHITE', self.DEFAULT_UI_WHITE)
+        self.btn_bg_color = getenv('UI_RED', self.DEFAULT_UI_RED)
+        self.btn_font_color = getenv('UI_WHITE', self.DEFAULT_UI_WHITE)
+        self.textbox_bg_color = getenv('UI_GRAY', self.DEFAULT_UI_GRAY)
+        self.textbox_font_color = getenv('UI_WHITE', self.DEFAULT_UI_WHITE)
         
         super().__init__(master)
         self.root  = master
         self.root.title("Latinframe Animation Studio")
-        self.root.configure(bg=self.BG_COLOR)  # Cambiar color de fondo de la ventana
-        self.root.geometry(f"{self.WIDTH}x{self.HEIGHT}")
+        self.root.configure(bg=self.bg_color)  # Cambiar color de fondo de la ventana
+        self.root.geometry(f"{self.width}x{self.heigth}")
         
         # Creo el frame para los botones
-        self.btns_frame = self.create_frame(side=tk.LEFT, padx=20, pady=20)
+        self.btns_frame = self.create_frame(side=tk.LEFT, fill=tk.X, padx=20, pady=20)
         
         # Text el frame para el cuadro de texto
         self.txt_frame = self.create_frame(side=tk.LEFT, padx=20, pady=20)
@@ -134,7 +138,7 @@ class LatinframeGUI(tk.Frame):
         Returns:
         - tk.Frame: Instancia del frame creado.
         """
-        frame = tk.Frame(self.root, bg=self.BG_COLOR, padx=padx, pady=pady)
+        frame = tk.Frame(self.root, bg=self.bg_color, padx=padx, pady=pady)
         frame.pack(fill=fill, side=side, expand=expand)
         return frame
 
@@ -155,7 +159,7 @@ class LatinframeGUI(tk.Frame):
         Returns:
         - tk.Button: Instancia del botón creado.
         """
-        button = tk.Button(parent, text=text, command=command, bg=self.BTN_BG_COLOR, fg=self.BTN_FONT_COLOR)
+        button = tk.Button(parent, text=text, command=command, bg=self.btn_bg_color, fg=self.btn_font_color)
         button.pack(fill=fill, side=side, padx=padx, pady=pady, expand=expand)
         return button
 
@@ -170,7 +174,7 @@ class LatinframeGUI(tk.Frame):
         Returns:
         - tk.Entry: Instancia del campo de entrada creado.
         """
-        entry = tk.Entry(parent, width=width, bg=self.UI_WHITE)
+        entry = tk.Entry(parent, width=width, bg=self.font_color)
         entry.insert(0, placeholder) 
         entry.pack(fill=tk.BOTH, expand=True, padx=10, pady=5)
         return entry
@@ -188,7 +192,7 @@ class LatinframeGUI(tk.Frame):
         Returns:
         - tk.Label: Instancia del label creado.
         """
-        label = tk.Label(parent, text=text, bg=self.BG_COLOR, fg=self.UI_WHITE)
+        label = tk.Label(parent, text=text, bg=self.bg_color, fg=self.font_color)
         label.pack(fill=tk.BOTH, expand=True)
         return label
 
@@ -205,7 +209,7 @@ class LatinframeGUI(tk.Frame):
         Returns:
         - tk.Text: Instancia del cuadro de texto creado.
         """
-        textbox = tk.Text(parent, width=width, height=height, bg=self.UI_GRAY, fg=self.UI_WHITE)
+        textbox = tk.Text(parent, width=width, height=height, bg=self.textbox_bg_color, fg=self.textbox_font_color)
         textbox.pack(fill=tk.BOTH, expand=expand)
         return textbox
 
@@ -223,6 +227,7 @@ class LatinframeGUI(tk.Frame):
     # Metodos que son llamados desde afuera de la clase
     ############################################################################
     def main_menu(self):
+        logger.info('Menu principal.')
         # Configure the main menu with the stored options
         self.screen()  # Clear the screen
         for text, command in self.main_menu_options:

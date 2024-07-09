@@ -2,7 +2,7 @@ from multiprocessing import cpu_count
 import time
 import os
 
-from src.utils.logger import Logger
+from src.logger.logger import Logger
 from src.database.db import Database
 from src.utils.driver import Driver
 from src.utils.utils import SIMILARWEB_BASE_URL
@@ -13,7 +13,7 @@ from src.similarweb.similarweb import SimilarWebWebsite
 ################################################################################
 # Crear un logger
 ################################################################################
-logger = Logger().get_logger()
+logger = Logger(os.path.basename(__file__)).get_logger()
 
 ################################################################################
 # Clase principal
@@ -26,11 +26,11 @@ class SimilarWebManager:
     _instance = None
 
     # Configuraciones por defecto
-    DEFAULT_N_WEBS_FETCH = getenv('SIMILARWEB_N_WEBS_FETCH', 10)
-    SKIP_SCRAP = getenv('SIMILARWEB_SKIP_SCRAP', False)
-    N_CORES = getenv('MP_N_CORES', 4)
-    DB_NAME = getenv('DB_NAME', 'latinframe.db')
-    DELAY = getenv('SIMILARWEB_DELAY', 8)
+    DEFAULT_DEFAULT_N_WEBS_FETCH = 10
+    DEFAULT_SKIP_SCRAP = False
+    DEFAULT_N_CORES = 4
+    DEFAULT_DB_NAME = 'latinframe.db'
+    DEFAULT_DELAY = 8
     DEBUG = True
     RESULTS_PATH = r'results/similarweb/'
 
@@ -48,9 +48,13 @@ class SimilarWebManager:
         # Evitar la inicialización múltiple
         # verificando si existe el atributo initialized en la clase
         if not hasattr(self, 'initialized'):
-            self.n_webs_fetch = getenv('similarweb_nwebs_fecth', self.DEFAULT_N_WEBS_FETCH)
             self.domains = domains
             self.results_path = self.RESULTS_PATH
+            
+            self.n_webs_fetch = getenv('SIMILARWEB_N_WEBS_FETCH', self.DEFAULT_DEFAULT_N_WEBS_FETCH)
+            self.skip_scrap = getenv('SIMILARWEB_SKIP_SCRAP', self.DEFAULT_SKIP_SCRAP)
+            self.db_name = getenv('DB_NAME', self.DEFAULT_DB_NAME)
+            self.delay = getenv('SIMILARWEB_DELAY', self.DEFAULT_DELAY)
         
             # Comprobaciones de seguridad
             self.n_webs_fetch = max(self.n_webs_fetch, 0) # Me aseguro que no sea menor que 0
@@ -76,7 +80,7 @@ class SimilarWebManager:
         Devuelve una representación de cadena con los datos relevantes de la clase.
         """
         info_str = (
-            f"- Nombre de la base de datos: {self.DB_NAME}\n"
+            f"- Nombre de la base de datos: {self.db_name}\n"
             f"- SimilarWeb Manager listo para operar: {self.initialized}"
         )
         return info_str
@@ -86,13 +90,13 @@ class SimilarWebManager:
         Obtiene el número de procesos a utilizar según la configuración.
         """
         max_n_cores = cpu_count()
-        if self.N_CORES < 0:
+        if getenv('SIMILARWEB_N_CORES', self.DEFAULT_N_CORES) < 0:
             return max_n_cores
         else:
-            if self.N_CORES > max_n_cores:
+            if getenv('SIMILARWEB_N_CORES', self.DEFAULT_N_CORES) > max_n_cores:
                 return max_n_cores
             else:
-                return self.N_CORES
+                return getenv('SIMILARWEB_N_CORES', self.DEFAULT_N_CORES)
 
     def initialize_database(self):
         """
@@ -100,7 +104,7 @@ class SimilarWebManager:
         """
         try:
             # Crear una instancia de Database y abrir la base de datos
-            return Database(self.DB_NAME)
+            return Database(self.db_name)
         except Exception as e:
             # Manejar el error al abrir la base de datos
             logger.error(f'Error al inicializar la base de datos. Error: {e}.')
@@ -139,10 +143,10 @@ class SimilarWebManager:
         table_filenames = [self.generate_filename(x) for x in table_urls]
         
         # Hago el fetch de los HTML
-        if not self.SKIP_SCRAP:
+        if not self.skip_scrap:
             self.driver.open_multiple_urls(
                     urls = table_urls,
-                    wait_time = self.DELAY,
+                    wait_time = self.delay,
                     element_selector = '.app-section__content'
                 )
         
@@ -194,10 +198,10 @@ class SimilarWebManager:
         logger.info(f'Lista final de URLs: {url_list}')
 
         # Obtengo el codigo HTML para esas paginas
-        if not self.SKIP_SCRAP:
+        if not self.skip_scrap:
             self.driver.open_multiple_urls(
                     urls = url_list,
-                    wait_time = self.DELAY,
+                    wait_time = self.delay,
                     element_selector='.app-section__content'
                 )
         
@@ -309,7 +313,7 @@ class SimilarWebManager:
             return
         
         # Me aseguro de tener una espera
-        delay = delay or self.DELAY
+        delay = delay or self.delay
         
         # Armo la URL
         url = get_similarweb_url_tuple(domain)[0]
