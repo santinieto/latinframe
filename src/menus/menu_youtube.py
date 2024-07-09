@@ -1,11 +1,12 @@
 from src.youtube.youtube_manager import YoutubeManager
 from src.youtube.youtube_manager import initialize_youtube_channel
 from src.youtube.youtube_manager import initialize_youtube_video, initialize_youtube_video_from_db
-from src.utils.logger import Logger
+from src.logger.logger import Logger
 from functools import partial
+import os
 
 # Crear un logger
-logger = Logger().get_logger()
+logger = Logger(os.path.basename(__file__)).get_logger()
 
 def menu_youtube(app):
     """
@@ -14,6 +15,7 @@ def menu_youtube(app):
     Args:
         app: La instancia de la aplicación de la interfaz gráfica.
     """
+    logger.info('Menu de operaciones con Youtube.')
     try:
         app.screen()  # Limpia la pantalla
         app.add_option("Actualizar todo", lambda: fetch_all_youtube_data())

@@ -1,9 +1,10 @@
 from src.similarweb.similarweb_manager import SimilarWebManager
-from src.utils.logger import Logger
+from src.logger.logger import Logger
 from functools import partial
+import os
 
 # Crear un logger
-logger = Logger().get_logger()
+logger = Logger(os.path.basename(__file__)).get_logger()
 
 def menu_similarweb(app):
     """
@@ -12,6 +13,7 @@ def menu_similarweb(app):
     Args:
         app: La instancia de la aplicación de la interfaz gráfica.
     """
+    logger.info('Menu de operaciones con SimilarWebs.')
     try:
         app.screen()  # Limpia la pantalla
         app.add_option("Actualizar todo", lambda: fetch_similarwebs_data())

@@ -16,13 +16,14 @@ from urllib.parse import urlparse, urlunparse
 from pathlib import Path
 import threading
 
-from src.utils.logger import Logger
+from src.logger.logger import Logger
 from src.utils.environment import set_environment
+from src.utils.utils import getenv
 
 ################################################################################
 # Crear un logger
 ################################################################################
-logger = Logger().get_logger()
+logger = Logger(os.path.basename(__file__)).get_logger()
 
 ################################################################################
 # Clase principal
@@ -48,6 +49,8 @@ class Driver:
         """
 
         # Atributos
+        self.default_browser = getenv('DRIVER_BROWSER', self.DEFAULT_BROWSER)
+        self.wait_time = getenv('DRIVER_WAIT_TIME', self.DEFAULT_WAIT_TIME)
         self.max_concurrent = max_concurrent
         self.drivers_path = self.DRIVERS_PATH
         self.results_path = self.RESULTS_PATH
@@ -93,7 +96,7 @@ class Driver:
         """
         # Me fijo si uso un navegador en particular
         if not browser:
-            browser = self.DEFAULT_BROWSER
+            browser = self.default_browser
         
         # Obtengo los controladores del navegador
         browser_options = self._get_browser_options(browser)
@@ -200,8 +203,8 @@ class Driver:
             element_selector (str, optional): Selector del elemento HTML que se espera antes de cerrar el navegador.
         """
         # Valores por defecto
-        browser = browser or self.DEFAULT_BROWSER
-        wait_time = wait_time or self.DEFAULT_WAIT_TIME
+        browser = browser or self.default_browser
+        wait_time = wait_time or self.wait_time
         
         if driver_key not in self.drivers:
             self.drivers[driver_key] = self.set_driver(browser)
@@ -255,8 +258,8 @@ class Driver:
         threads = []
         
         # Valores por defecto
-        browser = browser or self.DEFAULT_BROWSER
-        wait_time = wait_time or self.DEFAULT_WAIT_TIME
+        browser = browser or self.default_browser
+        wait_time = wait_time or self.wait_time
         
         # Me aseguro que sea una lista porque sino voy a recorrer letra por letra
         # de la cadena
@@ -304,8 +307,8 @@ class Driver:
             bool: True si la condición se cumplió y se guardó el HTML correctamente, False en caso contrario.
         """
         # Valores por defecto
-        browser = browser or self.DEFAULT_BROWSER
-        wait_time = wait_time or self.DEFAULT_WAIT_TIME
+        browser = browser or self.default_browser
+        wait_time = wait_time or self.wait_time
         
         if driver_key not in self.drivers:
             self.drivers[driver_key] = self.set_driver(browser)

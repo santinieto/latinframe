@@ -7,6 +7,7 @@ def menu_database(app):
     Args:
         app: La instancia de la aplicación de la interfaz gráfica.
     """
+    logger.info('Menu de operaciones con la base de datos.')
     try:
         app.screen()  # Limpia la pantalla
         app.add_option("Ejecutar SQL", lambda: print("Ejecutar SQL"))

@@ -1,9 +1,10 @@
 from src.products.product_manager import ProductManager
-from src.utils.logger import Logger
+from src.logger.logger import Logger
 from src.database.db import Database
+import os
 
 # Crear un logger
-logger = Logger().get_logger()
+logger = Logger(os.path.basename(__file__)).get_logger()
 
 def menu_products(app):
     """
@@ -12,6 +13,7 @@ def menu_products(app):
     Args:
         app: La instancia de la aplicación de la interfaz gráfica.
     """
+    logger.info('Menu de gestion de productos.')
     try:
         app.screen()  # Limpia la pantalla
         app.add_option("Actualizar todo", lambda: fetch_products_data())

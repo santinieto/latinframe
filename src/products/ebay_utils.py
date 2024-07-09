@@ -8,12 +8,13 @@ from multiprocessing import Pool, cpu_count
 from bs4 import BeautifulSoup
 import time
 
-from src.utils.logger import Logger
-from src.utils.utils import get_http_response
+from src.logger.logger import Logger
+from src.utils.utils import get_http_response, getenv
 from src.products.product import Product
+import os
 
 # Crear un logger
-logger = Logger().get_logger()
+logger = Logger(os.path.basename(__file__)).get_logger()
 
 # Define tu función de inicialización de cada objeto
 def init_ebay_item(html_content):
@@ -38,8 +39,9 @@ class EbayProductListings:
     # Atributo de clase para almacenar la instancia única
     _instance = None
     
-    ENABLE_MP = True
-    N_CORES = -1
+    DEFAULT_SAVE_HTML = False
+    DEFAULT_ENABLE_MP = True
+    DEFAULT_N_CORES = -1
     DEBUG = False
     
     DEFAULT_TOPICS = [
@@ -64,6 +66,8 @@ class EbayProductListings:
             self.topics = []
             self.listings = {}
             self.urls = {}
+            self.save_html = getenv('PRODUCTS_SAVE_HTML', self.DEFAULT_SAVE_HTML)
+            self.enable_mp = getenv('DEFAULT_ENABLE_MP', self.DEFAULT_ENABLE_MP)
             self.n_cores = self.set_n_cores()
             
             # Defino una lista por defecto y
@@ -71,7 +75,7 @@ class EbayProductListings:
             self.add_topics(self.DEFAULT_TOPICS + topics)
 
             # Inicializar el objeto Pool para el procesamiento paralelo
-            if self.ENABLE_MP:
+            if self.enable_mp:
                 self.pool = Pool(processes=self.n_cores)
             else:
                 self.pool = None
@@ -83,13 +87,13 @@ class EbayProductListings:
         Obtiene el número de procesos a utilizar según la configuración.
         """
         max_n_cores = cpu_count()
-        if self.N_CORES < 0:
+        if getenv('MP_N_CORES', self.DEFAULT_N_CORES) < 0:
             return max_n_cores
         else:
-            if self.N_CORES > max_n_cores:
+            if getenv('MP_N_CORES', self.DEFAULT_N_CORES) > max_n_cores:
                 return max_n_cores
             else:
-                return self.N_CORES
+                return getenv('MP_N_CORES', self.DEFAULT_N_CORES)
 
     ############################################################################
     # Metodos de de uso
@@ -196,7 +200,7 @@ class EbayProductListings:
                 #
                 html_contents = html_contents[2:]
                 
-                if self.ENABLE_MP:
+                if self.enable_mp:
                     # Procesamiento en paralelo
                     self.parallel_item_initialize(topic, html_contents)
                 else:
@@ -302,7 +306,8 @@ class EbayProduct(Product):
             self._fetch_product_id()
             
         if self.product_id:
-            logger.info(f"Contenido HTML establecido con éxito para el producto {self.product_id}.")
+            if self.DEBUG:
+                logger.info(f"Contenido HTML establecido con éxito para el producto {self.product_id}.")
         else:
             self.html_content = None
             logger.error(f"No se establecio el contenido HTML para el producto dado que no se encontro el ID.\n\nHTML\n\n{html_content}")
@@ -404,7 +409,7 @@ class EbayProduct(Product):
                 logger.error(f"No se dispone de contenido HTML para el producto {self.product_id}.")
                 return False
                 
-            if self.SAVE_HTML:
+            if self.save_html:
                 self.save_html_content()
             
             # Crear el diccionario para los datos

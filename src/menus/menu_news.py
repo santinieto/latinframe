@@ -1,9 +1,10 @@
 from src.news.google_news import GoogleNewsListings, fetch_new_id
-from src.utils.logger import Logger
+from src.logger.logger import Logger
 from src.database.db import Database
+import os
 
 # Crear un logger
-logger = Logger().get_logger()
+logger = Logger(os.path.basename(__file__)).get_logger()
 
 def menu_news(app):
     """
@@ -12,6 +13,7 @@ def menu_news(app):
     Args:
         app: La instancia de la aplicación de la interfaz gráfica.
     """
+    logger.info('Menu de gestion de noticias.')
     try:
         app.screen()  # Limpia la pantalla
         app.add_option("Actualizar todo", lambda: fetch_all_news_data())

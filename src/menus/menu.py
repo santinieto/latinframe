@@ -29,6 +29,7 @@ def configure_main_menu(app):
         print(f"Error al configurar el menú principal: {e}")
 
 def run_all_processes():
+    logger.info('Se comienza la ejecucion general de la aplicacion.')
     fetch_all_news_data()
     fetch_products_data('all')
     fetch_all_youtube_data()

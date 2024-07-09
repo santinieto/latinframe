@@ -3,18 +3,18 @@ from src.utils.utils import get_formatted_date
 from src.utils.utils import clean_and_parse_number
 from src.utils.utils import getenv
 from src.utils.utils import get_time_len
-from src.utils.logger import Logger
+from src.logger.logger import Logger
 from src.youtube.youtube_api import YoutubeAPI
-import os
 import re
 import json
 import requests
 from pytube import YouTube
 from datetime import datetime
 from bs4 import BeautifulSoup
+import os
 
 # Crear un logger
-logger = Logger().get_logger()
+logger = Logger(os.path.basename(__file__)).get_logger()
 
 class YoutubeVideo:
     ############################################################################
@@ -22,7 +22,7 @@ class YoutubeVideo:
     ############################################################################
     # Valores por defecto para los atributos de la clase
     DEBUG = True
-    SAVE_HTML = getenv('YOUTUBE_VIDEO_SAVE_HTML', True)
+    DEFAULT_SAVE_HTML = True
     DEFAULT_VALUES = {
         'video_id': 'Unknown Video ID',
         'channel_id': 'Unknow Channel ID',
@@ -43,6 +43,7 @@ class YoutubeVideo:
         self.data_loaded = False
         self.html_content = None
         self.fetch_status = False
+        self.save_html = getenv('YOUTUBE_VIDEO_SAVE_HTML', self.DEFAULT_SAVE_HTML)
         
         # Si al momento de la creación del objeto se proporciona un ID de video, lo usamos
         if video_id is not None:
@@ -216,7 +217,7 @@ class YoutubeVideo:
                 logger.error(f"No se dispone de contenido HTML para el video {self.video_id}.")
                 return False
 
-            if self.SAVE_HTML:
+            if self.save_html:
                 self.save_html_content()
 
             # Crear el diccionario para los datos
@@ -236,7 +237,8 @@ class YoutubeVideo:
 
             # Actualiza la información del video con los datos obtenidos del scraping
             self.load_from_dict(video_data)
-            logger.info("Los datos se cargaron exitosamente mediante scraping de contenido HTML.")
+            if self.DEBUG:
+                logger.info("Los datos se cargaron exitosamente mediante scraping de contenido HTML.")
             return True
 
         except Exception as e:

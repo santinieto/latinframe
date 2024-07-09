@@ -1,9 +1,9 @@
 import os
-from src.utils.logger import Logger
-from src.utils.utils import get_formatted_date
+from src.logger.logger import Logger
+from src.utils.utils import getenv
 
 # Crear un logger
-logger = Logger().get_logger()
+logger = Logger(os.path.basename(__file__)).get_logger()
 
 class Product:
     ############################################################################
@@ -11,7 +11,7 @@ class Product:
     ############################################################################
     # Valores por defecto para los atributos de la clase
     DEBUG = False
-    SAVE_HTML = False
+    DEFAULT_SAVE_HTML = False
     DEFAULT_VALUES = {
         'product_id': None,
         'product_name': '',
@@ -41,6 +41,9 @@ class Product:
         # Si se proporciona un diccionario de información, lo usamos
         if info_dict:
             self.load_from_dict(info_dict)
+        
+        # Defino si tengo que guardar los HTML
+        self.save_html = getenv('PRODUCTS_SAVE_HTML', self.DEFAULT_SAVE_HTML)
         
         # Este no va en el diccionario
         self.html_content = None

@@ -2,15 +2,15 @@ from src.utils.utils import get_http_response
 from src.utils.utils import get_formatted_date
 from src.utils.utils import clean_and_parse_number
 from src.utils.utils import getenv
-from src.utils.logger import Logger
+from src.logger.logger import Logger
 from src.youtube.youtube_api import YoutubeAPI
-import os
 import re
 import json
 from bs4 import BeautifulSoup
+import os
 
 # Crear un logger
-logger = Logger().get_logger()
+logger = Logger(os.path.basename(__file__)).get_logger()
 
 class YoutubeChannel:
     ############################################################################
@@ -18,7 +18,7 @@ class YoutubeChannel:
     ############################################################################
     # Valores por defecto para los atributos de la clase
     DEBUG = False
-    SAVE_HTML = getenv('YOUTUBE_CHANNEL_SAVE_HTML', False)
+    DEFAULT_SAVE_HTML = False
     DEFAULT_N_VIDEOS_FETCH = 10
     DEFAULT_FETCH_VIDEOS = True
     DEFAULT_FETCH_PLAYLISTS = True
@@ -50,6 +50,7 @@ class YoutubeChannel:
         self.data_loaded = False
         self.html_content = None
         self.fetch_status = False
+        self.save_html = getenv('YOUTUBE_CHANNEL_SAVE_HTML', self.DEFAULT_SAVE_HTML)
         self.fetch_channel_videos = getenv('YOUTUBE_CHANNEL_FETCH_VIDEOS', self.DEFAULT_FETCH_VIDEOS)
         self.fetch_channel_playlists = getenv('YOUTUBE_CHANNEL_FETCH_PLAYLISTS', self.DEFAULT_FETCH_PLAYLISTS)
         self.fetch_channel_shorts = getenv('YOUTUBE_CHANNEL_FETCH_SHORTS', self.DEFAULT_FETCH_SHORTS)
@@ -360,7 +361,7 @@ class YoutubeChannel:
                 logger.error(f"No se dispone de contenido HTML para el canal {self.channel_id}.")
                 return False
                 
-            if self.SAVE_HTML:
+            if self.save_html:
                 self.save_html_content()
             
             # Crear el diccionario para los datos

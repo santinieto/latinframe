@@ -2,11 +2,11 @@ import smtplib
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 from email.mime.application import MIMEApplication
+from src.logger.logger import Logger
 import os
-from src.utils.logger import Logger
 
 # Crear un logger
-logger = Logger().get_logger()
+logger = Logger(os.path.basename(__file__)).get_logger()
 
 def send_mail(subject='Subject', message='Body', dest='santi.nieto@live.com', filename=None, show_mail=True):
 

@@ -1,10 +1,10 @@
-from src.utils.logger import Logger
+from src.logger.logger import Logger
 from src.database.db_plots import *
 from functools import partial
 import os
 
 # Crear un logger
-logger = Logger().get_logger()
+logger = Logger(os.path.basename(__file__)).get_logger()
 
 def menu_plots(app):
     """
@@ -13,6 +13,7 @@ def menu_plots(app):
     Args:
         app: La instancia de la aplicación de la interfaz gráfica.
     """
+    logger.info('Menu de dibujos.')
     try:
         app.screen()  # Limpia la pantalla
         app.add_option("Canales de Youtube", lambda: menu_youtube_channel_plots(app))

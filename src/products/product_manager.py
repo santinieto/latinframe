@@ -7,7 +7,7 @@ import os
 # Agregar la ruta del directorio principal al sys.path
 sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 
-from src.utils.logger import Logger
+from src.logger.logger import Logger
 from src.database.db import Database
 from src.products.meli_utils import MeLiProductListings
 from src.products.ebay_utils import EbayProductListings
@@ -17,7 +17,7 @@ from src.utils.utils import getenv
 ################################################################################
 # Crear un logger
 ################################################################################
-logger = Logger().get_logger()
+logger = Logger(os.path.basename(__file__)).get_logger()
     
 ################################################################################
 # Gestionador de argumentos
@@ -91,13 +91,13 @@ class ProductManager:
     _instance = None
 
     # Configuraciones por defecto
-    MELI_FETCH = getenv('PRODUCTS_MELI_FETCH', True)
-    ALIBABA_FETCH = getenv('PRODUCTS_ALIBABA_FETCH', True)
-    EBAY_FETCH = getenv('PRODUCTS_EBAY_FETCH', True)
-    ADD_CHANNEL_NAMES = getenv('PRODUCTS_ADD_CHANNEL_NAMES', False)
-    N_PRODUCTS_FETCH = getenv('PRODUCTS_N_PRODUCTS_FETCH', 10)
-    N_CORES = getenv('MP_N_CORES', -1)
-    DB_NAME = getenv('DB_NAME', 'latinframe.db')
+    DEFAULT_MELI_FETCH = True
+    DEFAULT_ALIBABA_FETCH = True
+    DEFAULT_EBAY_FETCH = True
+    DEFAULT_ADD_CHANNEL_NAMES = False
+    DEFAULT_N_PRODUCTS_FETCH = 10
+    DEFAULT_N_CORES = -1
+    DEFAULT_DB_NAME = 'latinframe.db'
     DEBUG = True
     
     DEFAULT_TOPICS = [
@@ -122,6 +122,13 @@ class ProductManager:
         if not hasattr(self, 'initialized'):
             self.topics = []
             self.items = []
+            
+            self.meli_fetch = getenv('PRODUCTS_MELI_FETCH', self.DEFAULT_MELI_FETCH )
+            self.alibaba_fetch = getenv('PRODUCTS_ALIBABA_FETCH', self.DEFAULT_ALIBABA_FETCH )
+            self.ebay_fetch = getenv('PRODUCTS_EBAY_FETCH', self.DEFAULT_EBAY_FETCH )
+            self.add_channel_names = getenv('PRODUCTS_ADD_CHANNEL_NAMES', self.DEFAULT_ADD_CHANNEL_NAMES )
+            self.n_products_fetch = getenv('PRODUCTS_N_PRODUCTS_FETCH', self.DEFAULT_N_PRODUCTS_FETCH )
+            self.db_name = getenv('DB_NAME', self.DEFAULT_DB_NAME)
             self.n_cores = self.set_n_cores()
             
             # Defino una lista por defecto y
@@ -132,7 +139,7 @@ class ProductManager:
             self.database = self.initialize_database()
             
             # Obtengo los nombres de los canales desde la base de datos
-            if self.ADD_CHANNEL_NAMES:
+            if self.add_channel_names:
                 self.load_channel_names_from_database()
             
             # Marco la clase como inicializada
@@ -147,10 +154,10 @@ class ProductManager:
         Devuelve una representación de cadena con los datos relevantes de la clase.
         """
         info_str = (
-            f"- Obtencion de productos desde Mercado Libre: {self.MELI_FETCH}\n"
-            f"- Obtencion de productos desde Ebay: {self.EBAY_FETCH}\n"
-            f"- Obtencion de productos desde Alibaba: {self.ALIBABA_FETCH}\n"
-            f"- Nombre de la base de datos: {self.DB_NAME}\n"
+            f"- Obtencion de productos desde Mercado Libre: {self.meli_fetch}\n"
+            f"- Obtencion de productos desde Ebay: {self.ebay_fetch}\n"
+            f"- Obtencion de productos desde Alibaba: {self.alibaba_fetch}\n"
+            f"- Nombre de la base de datos: {self.db_name}\n"
             f"- Tematicas a buscar: {self.topics}\n"
             f"- Product Manager listo para operar: {self.initialized}"
         )
@@ -161,13 +168,13 @@ class ProductManager:
         Obtiene el número de procesos a utilizar según la configuración.
         """
         max_n_cores = cpu_count()
-        if self.N_CORES < 0:
+        if getenv('MP_N_CORES', self.DEFAULT_N_CORES) < 0:
             return max_n_cores
         else:
-            if self.N_CORES > max_n_cores:
+            if getenv('MP_N_CORES', self.DEFAULT_N_CORES) > max_n_cores:
                 return max_n_cores
             else:
-                return self.N_CORES
+                return getenv('MP_N_CORES', self.DEFAULT_N_CORES)
 
     def initialize_database(self):
         """
@@ -175,7 +182,7 @@ class ProductManager:
         """
         try:
             # Crear una instancia de Database y abrir la base de datos
-            return Database(self.DB_NAME)
+            return Database(self.db_name)
         except Exception as e:
             # Manejar el error al abrir la base de datos
             logger.error(f'Error al inicializar la base de datos. Error: {e}.')
@@ -221,13 +228,13 @@ class ProductManager:
     def fetch_products(self):
         self.items = []
         
-        if self.MELI_FETCH:
+        if self.meli_fetch:
             self.fetch_meli_products()
             
-        if self.ALIBABA_FETCH:
+        if self.alibaba_fetch:
             self.fetch_alibaba_products()
             
-        if self.EBAY_FETCH:
+        if self.ebay_fetch:
             self.fetch_ebay_products()
         
     def show_items(self):

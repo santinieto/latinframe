@@ -1,10 +1,11 @@
 import os
 
-from src.utils.logger import Logger
-from src.utils.utils import get_formatted_date
+from src.logger.logger import Logger
+from src.utils.utils import getenv
+import os
 
 # Crear un logger
-logger = Logger().get_logger()
+logger = Logger(os.path.basename(__file__)).get_logger()
 
 class New:
     ############################################################################
@@ -12,7 +13,7 @@ class New:
     ############################################################################
     # Valores por defecto para los atributos de la clase
     DEBUG = False
-    SAVE_HTML = False
+    DEFAULT_SAVE_HTML = False
     DEFAULT_VALUES = {
         'new_id': None,                 # Identificador de la noticia
         'title': '',                    # Título de la noticia
@@ -28,6 +29,7 @@ class New:
     def __init__(self, new_id=None, info_dict=None):
         # Inicialización de la clase con valores por defecto y datos opcionales
         self.set_default_values()
+        self.save_html = getenv('NEWS_SAVE_HTML', self.DEFAULT_SAVE_HTML)
 
         # Si se proporciona un ID de la noticia, lo usamos
         if new_id is not None:

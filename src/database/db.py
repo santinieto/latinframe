@@ -2,24 +2,25 @@ import sqlite3
 import datetime
 import os
 import pandas as pd
-from src.utils.logger import Logger
-from src.utils.utils import join_str
+from src.logger.logger import Logger
+from src.utils.utils import join_str, getenv
     
 # Crear un logger
-logger = Logger().get_logger()
+logger = Logger(os.path.basename(__file__)).get_logger()
 
 class Database:
     ############################################################################
     # Atributos globables
     ############################################################################
+    DEFAULT_DB_NAME = 'latinframe.db'
 
     ############################################################################
     # Metodos de incializacion
     ############################################################################
 
-    def __init__(self, db_name='latinframe.db'):
+    def __init__(self, db_name=None):
         # Nombre de la base de datos
-        self.db_name = db_name
+        self.db_name = getenv('DB_NAME', self.DEFAULT_DB_NAME)
         self.conn = None
         self.cursor = None
 

@@ -1,14 +1,13 @@
 import os
 import json
 from pathlib import Path
-
-from src.utils.logger import Logger
+from src.logger.logger import Logger
 
 # Crear un logger
-logger = Logger().get_logger()
+logger = Logger(os.path.basename(__file__)).get_logger()
 
 # Variables globables
-DEFAULT_ENVIRONMENT_VERBOSE = True
+DEFAULT_ENVIRONMENT_VERBOSE = False
 
 def load_json(filename='', verbose=DEFAULT_ENVIRONMENT_VERBOSE):
     """
