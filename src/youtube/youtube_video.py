@@ -21,7 +21,7 @@ class YoutubeVideo:
     # Metodos de incializacion
     ############################################################################
     # Valores por defecto para los atributos de la clase
-    DEBUG = True
+    DEBUG = False
     DEFAULT_SAVE_HTML = True
     DEFAULT_VALUES = {
         'video_id': 'Unknown Video ID',
@@ -701,15 +701,15 @@ class YoutubeVideo:
                     self.load_from_dict(video_data)
                     
                     if self.DEBUG:
-                        logger.info("Los datos se cargaron exitosamente utilizando la API de YouTube.")
+                        logger.info(f"Los datos se cargaron exitosamente utilizando la API de YouTube para el video [{self.video_id}].")
                     return True
                 
                 else:
                     if self.DEBUG:
-                        logger.debug(f"Se intentó usar la API de YouTube para obtener los datos del video {self.video_id} pero hubo un fallo al procesar la petición.")
+                        logger.debug(f"Se intentó usar la API de YouTube para obtener los datos del video [{self.video_id}] pero hubo un fallo al procesar la petición.")
             else:
                 if self.DEBUG:
-                    logger.debug(f"Se intentó usar la API de YouTube para obtener los datos del video {self.video_id} pero la API está deshabilitada.")
+                    logger.debug(f"Se intentó usar la API de YouTube para obtener los datos del video [{self.video_id}] pero la API está deshabilitada.")
         
         except Exception as e:
             logger.warning(f"Fallo al cargar datos utilizando la API de YouTube: {e}")

@@ -68,7 +68,7 @@ class GoogleNewsListings:
             self.listings = {}
             self.urls = {}
             self.save_html = getenv('NEWS_SAVE_HTML', self.DEFAULT_SAVE_HTML)
-            self.enable_mp = getenv('DEFAULT_ENABLE_MP', self.DEFAULT_ENABLE_MP)
+            self.enable_mp = getenv('ENABLE_MP', self.DEFAULT_ENABLE_MP)
             self.n_cores = self.set_n_cores()
             
             # Defino una lista por defecto y

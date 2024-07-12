@@ -179,9 +179,9 @@ class YoutubeManager:
     _instance = None
 
     # Configuraciones por defecto
-    DEFAULT_ENABLE_MP = getenv('ENABLE_MP', True)
-    DEFAULT_N_CORES = getenv('MP_N_CORES', -1)
-    DEFAULT_DB_NAME = getenv('DB_NAME', "latinframe.db")
+    DEFAULT_ENABLE_MP = True
+    DEFAULT_N_CORES = -1
+    DEFAULT_DB_NAME = "latinframe.db"
     DEBUG = True
 
     ############################################################################

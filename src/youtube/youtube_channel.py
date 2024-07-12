@@ -141,7 +141,7 @@ class YoutubeChannel:
             html_content (str): Contenido HTML a establecer.
         """
         self.html_content = html_content
-        logger.info(f"Contenido HTML establecido con éxito para el canal {self.channel_id}.")
+        logger.info(f"Contenido HTML establecido con éxito para el canal [{self.channel_id}].")
         
     def fetch_html_content(self, url_type='id', ovr_id=None, scrap_url=None):
         """ 
@@ -154,7 +154,7 @@ class YoutubeChannel:
         """
         # Si se proporciona un ID de canal para sobrescribir, úsalo
         if ovr_id is not None:
-            logger.warning(f"Se va a cambiar el ID del canal {self.channel_id} por {ovr_id}")
+            logger.warning(f"Se va a cambiar el ID del canal [{self.channel_id}] por {ovr_id}")
             self.channel_id = ovr_id
             
         # Define una URL por defecto para hacer scraping
@@ -187,7 +187,7 @@ class YoutubeChannel:
             self.channel_id = href.split('/')[-1]
         
         if self.html_content is None:
-            logger.error(f"No se pudo obtener el contenido HTML para el canal {self.channel_id}.")
+            logger.error(f"No se pudo obtener el contenido HTML para el canal [{self.channel_id}].")
 
     def save_html_content(self, html_content=None):
         """
@@ -254,7 +254,7 @@ class YoutubeChannel:
                 class_='id_odometer__dDC1d mainOdometer'
             ).text
         except Exception as e:
-            logger.warning(f"Fallo al obtener la cantidad de suscriptores para el canal {self.channel_id}. Error: {e}")
+            logger.warning(f"Fallo al obtener la cantidad de suscriptores para el canal [{self.channel_id}]. Error: {e}\nURL: {url}")
             stats['subscribers'] = self.DEFAULT_VALUES['subscribers']
 
         # Obtengo el resto de la informacion
@@ -263,32 +263,32 @@ class YoutubeChannel:
                 class_='id_main_profile__Vlbht id_odometer2__DYVeW'
             )
         except Exception as e:
-            logger.error(f"Fallo al obtener la información adicional para el canal {self.channel_id}. Error: {e}")
+            logger.error(f"Fallo al obtener la información adicional para el canal [{self.channel_id}]. Error: {e}\nURL: {url}")
             return False, {}
 
         # Obtener el resto de las estadísticas
         try:
             stats['channel_views'] = clean_and_parse_number(info[0].text.replace('Channel Views', ''))
         except Exception as e:
-            logger.warning(f"Fallo al obtener las vistas para el canal {self.channel_id}. Error: {e}")
+            logger.warning(f"Fallo al obtener las vistas para el canal [{self.channel_id}]. Error: {e}\nURL: {url}")
             stats['channel_views'] = self.DEFAULT_VALUES['channel_views']
 
         try:
             stats['n_videos'] = clean_and_parse_number(info[1].text.replace('Videos', ''))
         except Exception as e:
-            logger.warning(f"Fallo al obtener el número de videos para el canal {self.channel_id}. Error: {e}")
+            logger.warning(f"Fallo al obtener el número de videos para el canal [{self.channel_id}]. Error: {e}\nURL: {url}")
             stats['n_videos'] = self.DEFAULT_VALUES['n_videos']
 
         try:
             stats['daily_subs'] = clean_and_parse_number(info[2].text.replace('Daily sub ', ''))
         except Exception as e:
-            logger.warning(f"Fallo al obtener las suscripciones diarias para el canal {self.channel_id}. Error: {e}")
+            logger.warning(f"Fallo al obtener las suscripciones diarias para el canal [{self.channel_id}]. Error: {e}\nURL: {url}")
             stats['daily_subs'] = self.DEFAULT_VALUES['daily_subs']
 
         try:
             stats['monthly_subs'] = clean_and_parse_number(info[3].text.replace('Monthly sub ', ''))
         except Exception as e:
-            logger.warning(f"Fallo al obtener las suscripciones mensuales para el canal {self.channel_id}. Error: {e}")
+            logger.warning(f"Fallo al obtener las suscripciones mensuales para el canal [{self.channel_id}]. Error: {e}\nURL: {url}")
             stats['monthly_subs'] = self.DEFAULT_VALUES['monthly_subs']
             
         return True, stats
@@ -337,7 +337,7 @@ class YoutubeChannel:
         
         except Exception as e:
             # Registrar el error y devolver una lista vacía en caso de fallo
-            logger.error(f"No se pudieron obtener las suscripciones del canal {self.channel_id}: {e}")
+            logger.error(f"No se pudieron obtener las suscripciones del canal [{self.channel_id}]. Error: {e}")
             return []
 
     ############################################################################
@@ -358,7 +358,7 @@ class YoutubeChannel:
             # Si hubo un fallo al obtener el codigo HTML del canal, logeo un
             # error y salgo de la funcion
             if self.html_content in [False, None]:
-                logger.error(f"No se dispone de contenido HTML para el canal {self.channel_id}.")
+                logger.error(f"No se dispone de contenido HTML para el canal [{self.channel_id}].")
                 return False
                 
             if self.save_html:
@@ -396,7 +396,7 @@ class YoutubeChannel:
                 channel_data['n_videos'] = int(aux_data['n_videos'])
                 channel_data['subscribers'] = int(aux_data['subscribers'])
             else:
-                logger.warning(f'Se produjo un error al obtener los datos auxiliares para el canal {self.channel_id}.')
+                logger.warning(f'Se produjo un error al obtener los datos auxiliares para el canal [{self.channel_id}].')
 
             # Actualiza la información del canal con los datos obtenidos del scraping
             self.load_from_dict(channel_data)
@@ -418,11 +418,11 @@ class YoutubeChannel:
             if match:
                 return match.group(1)
         except re.error as e:
-            logger.error(f"Fallo al aplicar el patrón de búsqueda {e} para el canal {self.channel_id}.")
+            logger.error(f"Fallo al aplicar el patrón de búsqueda {e} para el canal [{self.channel_id}].")
         except AttributeError as e:
-            logger.error(f"Error de atributo {e} al obtener los datos para el patron {pattern} para el canal {self.channel_id}.")
+            logger.error(f"Error de atributo {e} al obtener los datos para el patron {pattern} para el canal [{self.channel_id}].")
         except Exception as e:
-            logger.error(f"Error inesperado al obtener los datos para el patron {pattern} para el canal {self.channel_id}.")
+            logger.error(f"Error inesperado al obtener los datos para el patron {pattern} para el canal [{self.channel_id}].")
         return None
 
     def _fetch_channel_name(self, pattern=None):
@@ -477,7 +477,7 @@ class YoutubeChannel:
                 self.video_id_list = self.video_id_list[:self.n_videos_fetch]
                 
                 if self.DEBUG:
-                    logger.info(f'Se limito la cantidad de videos a {self.n_videos_fetch} para el canal {self.channel_id}')
+                    logger.info(f'Se limito la cantidad de videos a {self.n_videos_fetch} para el canal [{self.channel_id}]')
             
             if self.DEBUG:
                 logger.info("Lista de IDs de videos obtenida con éxito.")
@@ -517,7 +517,7 @@ class YoutubeChannel:
         
         except Exception as e:
             # Registrar el error y devolver una lista vacía en caso de fallo
-            logger.error(f"No se pudieron obtener las listas de reproduccion del canal {self.channel_id}: {e}")
+            logger.error(f"No se pudieron obtener las listas de reproduccion del canal [{self.channel_id}]: {e}")
             return self.DEFAULT_VALUES['playlist_id_list']
     
     def _fetch_channel_shorts(self):
@@ -549,7 +549,7 @@ class YoutubeChannel:
         
         except Exception as e:
             # Registrar el error y devolver una lista vacía en caso de fallo
-            logger.error(f"No se pudieron obtener las listas de reproduccion del canal {self.channel_id}: {e}")
+            logger.error(f"No se pudieron obtener las listas de reproduccion del canal [{self.channel_id}]: {e}")
             return self.DEFAULT_VALUES['short_id_list']
 
     ############################################################################
@@ -582,7 +582,7 @@ class YoutubeChannel:
                         channel_data['daily_subs'] = int(aux_data['daily_subs'])
                         channel_data['monthly_subs'] = int(aux_data['monthly_subs'])
                     else:
-                        logger.warning(f'Se produjo un error al obtener los datos auxiliares para el canal {self.channel_id}.')
+                        logger.warning(f'Se produjo un error al obtener los datos auxiliares para el canal [{self.channel_id}].')
                     
                     # Obtengo las suscripciones del canal en cuestion
                     channel_data['subchannels'] = [x[0] for x in self._fetch_channel_subchannels()]
@@ -608,10 +608,10 @@ class YoutubeChannel:
                 
                 else:
                     if self.DEBUG:
-                        logger.debug(f"Se intento usar la API de YouTube para obtener los datos del canal {self.channel_id} pero hubo un fallo al procesar la peticion.")
+                        logger.debug(f"Se intento usar la API de YouTube para obtener los datos del canal [{self.channel_id}] pero hubo un fallo al procesar la peticion.")
             else:
                 if self.DEBUG:
-                    logger.debug(f"Se intento usar la API de YouTube para obtener los datos del canal {self.channel_id} pero la API esta deshabilitada.")
+                    logger.debug(f"Se intento usar la API de YouTube para obtener los datos del canal [{self.channel_id}] pero la API esta deshabilitada.")
             
         except Exception as e:
             logger.warning(f"Fallo al cargar datos utilizando la API de YouTube: {e}")
@@ -641,20 +641,20 @@ class YoutubeChannel:
         """
         # Verifica si los datos ya están cargados
         if self.data_loaded:
-            logger.info(f"Los datos del canal {self.channel_id} ya están cargados en el objeto YoutubeChannel.")
+            logger.info(f"Los datos del canal [{self.channel_id}] ya están cargados en el objeto YoutubeChannel.")
             self.fetch_status = True
             return
 
         # Intenta cargar datos del diccionario proporcionado durante la inicialización
         if info_dict:
             self.load_from_dict(info_dict)
-            logger.info(f"Los datos del canal {self.channel_id} se cargaron exitosamente desde el diccionario proporcionado durante la inicialización.")
+            logger.info(f"Los datos del canal [{self.channel_id}] se cargaron exitosamente desde el diccionario proporcionado durante la inicialización.")
             self.fetch_status = True
             return
 
         # Verifica si se especificó un método forzado
         if force_method:
-            logger.info(f"Los datos del canal {self.channel_id} se van a cargar forzadamente usando el metodo {force_method}.")
+            logger.info(f"Los datos del canal [{self.channel_id}] se van a cargar forzadamente usando el metodo {force_method}.")
             
             if force_method.lower() == 'api':
                 if self._load_data_from_api():
@@ -669,7 +669,7 @@ class YoutubeChannel:
                 self.fetch_status = False
                 return
             
-            logger.error(f"No se pudo cargar datos del canal {self.channel_id} de YouTube usando metodos forzados.")
+            logger.error(f"No se pudo cargar datos del canal [{self.channel_id}] de YouTube usando metodos forzados.")
             self.fetch_status = False
             return
 
@@ -684,7 +684,7 @@ class YoutubeChannel:
             return
 
         # Si no se pudo cargar datos de ninguna manera, registra un mensaje de error
-        logger.error(f"No se pudo cargar datos del canal {self.channel_id} de YouTube.")
+        logger.error(f"No se pudo cargar datos del canal [{self.channel_id}] de YouTube.")
         self.fetch_status = False
         return
 
@@ -728,7 +728,8 @@ class YoutubeChannel:
             # Obtener los IDs de video que no se pudieron agregar
             not_added_ids = [vid for vid in new_video_ids[remaining_slots:] if vid not in self.video_id_list]
             # Emitir un mensaje de advertencia con los IDs de video que no se pudieron agregar
-            logger.warning(f"No se pudieron agregar los siguientes IDs de video debido a que se alcanzó el límite máximo o ya están en la lista: {not_added_ids}")
+            if self.DEBUG:
+                logger.warning(f"No se pudieron agregar los siguientes IDs de video para el canal [{self.channel_id}] debido a que se alcanzó el límite máximo o ya están en la lista: {not_added_ids}")
 
 if __name__ == "__main__":
     # Crear una instancia de YoutubeChannel

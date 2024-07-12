@@ -570,9 +570,9 @@ class EbayProduct(Product):
             if price_tag:
                 price, _ = self.get_product_price_currency(price_tag)
         except AttributeError:
-            logger.error("No se pudo obtener el precio del producto: no se encontró la etiqueta de precio.")
+            logger.error(f"No se pudo obtener el precio del producto [{self.product_id}]: no se encontró la etiqueta de precio.")
         except ValueError:
-            logger.error("No se pudo convertir el precio del producto a un número válido.")
+            logger.error(f"No se pudo convertir el precio del producto [{self.product_id}] a un número válido.")
 
         return price
     
@@ -595,7 +595,7 @@ class EbayProduct(Product):
             numbers = re.findall(r'\d+\.\d+', clean_string)
 
             if not numbers:
-                raise ValueError("No se encontraron precios en la cadena proporcionada.")
+                raise ValueError(f"No se encontraron precios en la cadena proporcionada [{price_string}].")
 
             # Convertir los números a valores decimales
             decimal_numbers = [float(number) for number in numbers]
@@ -603,7 +603,7 @@ class EbayProduct(Product):
             # Extraer la moneda de la cadena
             currency_matches = re.findall(r'[A-Z]+', clean_string)
             if not currency_matches:
-                raise ValueError("No se encontró la moneda en la cadena proporcionada.")
+                raise ValueError(f"No se encontró la moneda en la cadena proporcionada [{price_string}].")
             currency = currency_matches[0]
             
             # Convertir el signo de dólares
@@ -623,7 +623,7 @@ class EbayProduct(Product):
         except ValueError as e:
             logger.error(f"Error de valor al intentar obtener el precio o moneda del producto {self.product_id}. Error: {e}.")
         except IndexError as e:
-            logger.error("Error de índice: No se pudo encontrar la moneda en la cadena del producto {self.product_id}. Error: {e}.")
+            logger.error(f"Error de índice: No se pudo encontrar la moneda en la cadena del producto {self.product_id}. Error: {e}.")
         except Exception as e:
             logger.error(f"Error inesperado al intentar obtener el precio o moneda del producto {self.product_id}. Error: {e}.")
         
@@ -646,9 +646,9 @@ class EbayProduct(Product):
             # FIXME: No se como obtener esto
             cuotas = self.DEFAULT_VALUES['installments']
         except AttributeError:
-            logger.error("No se pudo obtener el número de cuotas del producto: no se encontró la etiqueta de cuotas.")
+            logger.error(f"No se pudo obtener el número de cuotas del producto [{self.product_id}]: no se encontró la etiqueta de cuotas.")
         except (ValueError, IndexError):
-            logger.error("No se pudo convertir el número de cuotas del producto a un número entero válido.")
+            logger.error(f"No se pudo convertir el número de cuotas del producto [{self.product_id}] a un número entero válido.")
             logger.warning(self.html_content)
         return cuotas
     
@@ -672,7 +672,7 @@ class EbayProduct(Product):
             if store_tag:
                 store = store_tag.text.replace('de ','')
         except AttributeError:
-            logger.error("No se pudo obtener el vendedor del producto: no se encontró la etiqueta de tienda.")
+            logger.error(f"No se pudo obtener el vendedor del producto [{self.product_id}]: no se encontró la etiqueta de tienda.")
 
         return store
     
@@ -693,7 +693,7 @@ class EbayProduct(Product):
             # FIXME: No se como obtener esto
             rating = self.DEFAULT_VALUES['rating']
         except AttributeError:
-            logger.error("No se pudo obtener la calificación del producto: no se encontró la etiqueta de calificación.")
+            logger.error(f"No se pudo obtener la calificación del producto [{self.product_id}]: no se encontró la etiqueta de calificación.")
         
         return rating
 
@@ -714,7 +714,7 @@ class EbayProduct(Product):
             # FIXME: No se como obtener esto
             rating_count = self.DEFAULT_VALUES['rating_count']
         except (AttributeError, ValueError):
-            logger.error("No se pudo obtener el número de calificaciones del producto.")
+            logger.error(f"No se pudo obtener el número de calificaciones del producto [{self.product_id}].")
         
         return rating_count
 
@@ -739,7 +739,7 @@ class EbayProduct(Product):
             else:
                 is_best_seller = bool( 0 )
         except AttributeError:
-            logger.error("No se pudo obtener información sobre si el producto es el más vendido: no se encontró la etiqueta correspondiente.")
+            logger.error(f"No se pudo obtener información sobre si el producto [{self.product_id}] es el más vendido: no se encontró la etiqueta correspondiente.")
         
         return is_best_seller
         
@@ -760,7 +760,7 @@ class EbayProduct(Product):
             product_info = self.html_content.find('div', class_='s-item__info')
             is_promoted = 'kexu191' in product_info.find('span', class_='s-item__sep').find('span').get('style')
         except AttributeError:
-            logger.error("No se pudo obtener información sobre si el producto está promocionado: no se encontró la etiqueta correspondiente.")
+            logger.error(f"No se pudo obtener información sobre si el producto [{self.product_id}] está promocionado: no se encontró la etiqueta correspondiente.")
 
         return is_promoted
 
@@ -784,7 +784,7 @@ class EbayProduct(Product):
             else:
                 currency_symbol = '-'
         except AttributeError:
-            logger.error("No se pudo obtener el símbolo de la moneda: no se encontró la etiqueta correspondiente.")
+            logger.error(f"No se pudo obtener el símbolo de la moneda para el producto [{self.product_id}]: no se encontró la etiqueta correspondiente.")
             currency_symbol = '-'
 
         return currency_symbol
