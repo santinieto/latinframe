@@ -215,7 +215,7 @@ class Database:
             query = '''
             CREATE TABLE IF NOT EXISTS SHORT_RECORDS (
                 RECORD_ID INTEGER PRIMARY KEY AUTOINCREMENT,
-                SHORT_ID_ID TEXT,
+                SHORT_ID TEXT,
                 VIEWS INTEGER,
                 MOST_VIEWED_MOMENT TEXT,
                 LIKES INTEGER,
@@ -361,6 +361,7 @@ class Database:
                 PLAYLIST_ID TEXT PRIMARY KEY,
                 PLAYLIST_NAME TEXT,
                 CHANNEL_ID TEXT,
+                PUBLISH_DATE DATE,
                 UPDATE_DATE DATE
             )
             '''
@@ -390,9 +391,10 @@ class Database:
         try:
             query = '''
             CREATE TABLE IF NOT EXISTS PLAYLIST_VIDEO (
-                PLAYLIST_ID TEXT PRIMARY KEY,
+                PLAYLIST_ID TEXT,
                 VIDEO_ID TEXT,
-                UPDATE_DATE DATE
+                UPDATE_DATE DATE,
+                PRIMARY KEY (PLAYLIST_ID, VIDEO_ID)
             )
             '''
             self.exec(query)
@@ -400,6 +402,63 @@ class Database:
             logger.error(f'Error al crear la tabla PLAYLIST_VIDEO: {str(e)}. Query: {query}')
         except Exception as e:
             logger.error(f'Error inesperado al crear la tabla PLAYLIST_VIDEO: {str(e)}. Query: {query}')
+
+    def insert_playlist_record(self, playlist_info):
+        """
+        Inserta un registro de canal en las tablas correspondientes.
+        """
+        current_time = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+        
+        try:
+            query = '''
+            INSERT OR REPLACE INTO PLAYLIST (
+                PLAYLIST_ID, PLAYLIST_NAME, CHANNEL_ID, PUBLISH_DATE, UPDATE_DATE
+            ) VALUES (?, ?, ?, ?, ?)
+            '''
+            params = (
+                playlist_info['playlist_id'], playlist_info['title'], playlist_info['channel_id'], playlist_info['publish_date'],
+                current_time
+            )
+            self.exec(query, params)
+        except sqlite3.Error as e:
+            logger.error(f'Error al insertar/actualizar registros en la tabla PLAYLIST: {str(e)}. Query: {query}, Parámetros: {params}')
+        except Exception as e:
+            logger.error(f'Error inesperado al insertar/actualizar registros en la tabla PLAYLIST: {str(e)}. Query: {query}, Parámetros: {params}')
+            
+        try:
+            query = '''
+            INSERT INTO PLAYLIST_RECORDS (
+                PLAYLIST_ID, VIDEOS_COUNT, TOTAL_VIEWS, LIKES, UPDATE_DATE
+            ) VALUES (?, ?, ?, ?, ?)
+            '''
+            params = (
+                playlist_info['playlist_id'], playlist_info['n_videos'], playlist_info['views'], playlist_info['likes'], 
+                current_time
+            )
+            self.exec(query, params)
+        except sqlite3.Error as e:
+            logger.error(f'Error al insertar/actualizar registros en la tabla PLAYLIST_RECORDS: {str(e)}. Query: {query}, Parámetros: {params}')
+        except Exception as e:
+            logger.error(f'Error inesperado al insertar/actualizar registros en la tabla PLAYLIST_RECORDS: {str(e)}. Query: {query}, Parámetros: {params}')
+        
+        try:
+            for video_id in playlist_info['video_ids']:
+                query = '''
+                INSERT INTO PLAYLIST_VIDEO (
+                    PLAYLIST_ID, VIDEO_ID, UPDATE_DATE
+                ) VALUES (?, ?, ?)
+                ON CONFLICT(PLAYLIST_ID, VIDEO_ID)
+                DO UPDATE SET UPDATE_DATE = excluded.UPDATE_DATE
+                '''
+                params = (
+                    playlist_info['playlist_id'], video_id,
+                    current_time
+                )
+                self.exec(query, params)
+        except sqlite3.Error as e:
+            logger.error(f'Error al insertar/actualizar registros en la tabla PLAYLIST_VIDEO: {str(e)}. Query: {query}, Parámetros: {params}')
+        except Exception as e:
+            logger.error(f'Error inesperado al insertar/actualizar registros en la tabla PLAYLIST_VIDEO: {str(e)}. Query: {query}, Parámetros: {params}')
 
     #################################################################
     # Tablas de paginas de SimilarWeb

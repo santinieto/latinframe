@@ -1,3 +1,9 @@
+
+import os, sys
+
+# Agregar la ruta del directorio principal al sys.path
+sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
+
 from src.utils.utils import get_http_response
 from src.utils.utils import get_formatted_date
 from src.utils.utils import clean_and_parse_number
@@ -11,7 +17,6 @@ import requests
 from pytube import YouTube
 from datetime import datetime
 from bs4 import BeautifulSoup
-import os
 
 # Crear un logger
 logger = Logger(os.path.basename(__file__)).get_logger()
@@ -787,6 +792,9 @@ class YoutubeShort:
         return
     
 if __name__ == "__main__":
+    from src.utils.environment import set_environment
+    set_environment('settings.json')
+    
     # Crear una instancia de YoutubeShort
     short = YoutubeShort(short_id='5Q18_KxEQTQ')
 
@@ -795,11 +803,16 @@ if __name__ == "__main__":
     short.data_loaded = False
 
     # Llamar al método fetch_data
-    success = short.fetch_data(force_method='api')
+    short.fetch_data(force_method='api')
 
     # Verificar si se cargaron los datos con éxito
-    if success:
+    if short.fetch_status:
         print("Los datos se cargaron con éxito.")
         print(str(short))
     else:
         print("Error al cargar los datos.")
+    
+    # Guardo el short en la base da datos
+    from src.database.db import Database
+    with Database() as db:
+        db.insert_short_record( short.to_dict() )

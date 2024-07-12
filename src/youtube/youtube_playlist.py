@@ -1,3 +1,9 @@
+
+import os, sys
+
+# Agregar la ruta del directorio principal al sys.path
+sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
+
 from src.utils.utils import get_http_response
 from src.utils.utils import get_formatted_date
 from src.utils.utils import clean_and_parse_number
@@ -11,7 +17,6 @@ import requests
 from pytube import YouTube
 from datetime import datetime
 from bs4 import BeautifulSoup
-import os
 
 # Crear un logger
 logger = Logger(os.path.basename(__file__)).get_logger()
@@ -223,7 +228,6 @@ class YoutubePlaylist:
                 'channel_name': self._fetch_channel_name(),
                 'title': self._fetch_playlist_title(),
                 'views': self._fetch_playlist_views(),
-                'mvm': self._fetch_most_viewed_moment(),
                 'publish_date': self._fetch_publish_date(),
                 'likes': self._fetch_playlist_likes(),
                 'n_videos': self._fetch_n_videos(),
@@ -392,3 +396,29 @@ class YoutubePlaylist:
         logger.error(f"No se pudo cargar datos de la playlist {self.playlist_id} de YouTube.")
         self.fetch_status = False
         return
+    
+if __name__ == "__main__":
+    from src.utils.environment import set_environment
+    set_environment('settings.json')
+    
+    # Crear una instancia de YoutubePlaylist
+    playlist = YoutubePlaylist(playlist_id='PLBRoHO-L7e4Iw_JjEw2IlpE_FeR-wzgPS')
+
+    # Simular que los datos ya están cargados
+    # Si está en True se acaba la ejecución del programa
+    playlist.data_loaded = False
+
+    # Llamar al método fetch_data
+    playlist.fetch_data(force_method='api')
+
+    # Verificar si se cargaron los datos con éxito
+    if playlist.fetch_status:
+        print("Los datos se cargaron con éxito.")
+        print(str(playlist))
+    else:
+        print("Error al cargar los datos.")
+    
+    # Guardo el playlist en la base da datos
+    from src.database.db import Database
+    with Database() as db:
+        db.insert_playlist_record( playlist.to_dict() )

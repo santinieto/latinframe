@@ -543,6 +543,7 @@ class YoutubeAPI:
         """
         data = self.fetch_video_data(short_id)
         data['short_id'] = data['video_id']
+        del data['video_id']
         return data
     
     def fetch_playlist_data(self, playlist_id):
@@ -597,7 +598,7 @@ class YoutubeAPI:
                 data['views'] = 0
                 data['likes'] = 0
                 data['n_videos'] = item['contentDetails']['itemCount']
-                data['video_ids'] = self.fetch_playlist_videos(playlist_id=playlist_id)
+                data['video_ids'] = self.fetch_playlist_videos(playlist_id=playlist_id, n_videos_fetch=9999999)
 
                 logger.info(data)
             
