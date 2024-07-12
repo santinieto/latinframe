@@ -31,7 +31,8 @@ class YoutubePlaylist:
         'views': 0,
         'likes': 0,
         'n_videos': 0,
-        'publish_date': "00/00/00"
+        'publish_date': "00/00/00",
+        'video_ids': [],
     }
     
     def __init__(self, playlist_id=None, info_dict=None):
@@ -102,6 +103,7 @@ class YoutubePlaylist:
             f"- Cantidad de Me Gusta de la playlist de YouTube: {self.likes}\n"
             f"- Cantidad de videos en la playlist de YouTube: {self.n_videos}\n"
             f"- Fecha de publicación de la playlist de YouTube: {self.publish_date}"
+            f"- Lista de IDs de los videos: {self.video_ids}"
         )
         return info_str
     
@@ -194,6 +196,7 @@ class YoutubePlaylist:
     ############################################################################
     # Obtencion de datos mediante el codigo HTML
     ############################################################################
+    def _load_data_from_html(self):
         """
         Intenta cargar datos utilizando el scraping de contenido HTML.
 
@@ -224,6 +227,7 @@ class YoutubePlaylist:
                 'publish_date': self._fetch_publish_date(),
                 'likes': self._fetch_playlist_likes(),
                 'n_videos': self._fetch_n_videos(),
+                'video_ids': self._fetch_video_ids(),
             }
 
             # Actualiza la información de la playlist con los datos obtenidos del scraping
@@ -251,28 +255,31 @@ class YoutubePlaylist:
             logger.error(f"Error inesperado al obtener los datos para el patron {pattern} para el canal {self.channel_id}.")
         return None
     
-    def _fetch_channel_id():
+    def _fetch_channel_id(self):
         return None
     
-    def _fetch_channel_name():
+    def _fetch_channel_name(self):
         return None
     
-    def _fetch_playlist_title():
+    def _fetch_playlist_title(self):
         return None
     
-    def _fetch_playlist_views():
+    def _fetch_playlist_views(self):
         return None
     
-    def _fetch_most_viewed_moment():
+    def _fetch_most_viewed_moment(self):
         return None
     
-    def _fetch_publish_date():
+    def _fetch_publish_date(self):
         return None
     
-    def _fetch_playlist_likes():
+    def _fetch_playlist_likes(self):
         return None
     
-    def _fetch_n_videos():
+    def _fetch_n_videos(self):
+        return None
+    
+    def _fetch_video_ids(self):
         return None
     
     ############################################################################

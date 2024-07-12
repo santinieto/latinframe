@@ -562,6 +562,7 @@ class YoutubeAPI:
                 - 'views': Número de vistas de la playlist.
                 - 'likes': Número de "me gusta" de la playlist.
                 - 'n_videos': Duración de la playlist en formato 'HH:MM:SS'.
+                - 'video_ids': IDs de los videos de la playlist
         """
         # Verificar si la API de YouTube está habilitada
         if not self.is_enabled():
@@ -596,6 +597,7 @@ class YoutubeAPI:
                 data['views'] = 0
                 data['likes'] = 0
                 data['n_videos'] = item['contentDetails']['itemCount']
+                data['video_ids'] = self.fetch_playlist_videos(playlist_id=playlist_id)
 
                 logger.info(data)
             
