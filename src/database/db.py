@@ -29,7 +29,9 @@ class Database:
 
         # Create tables
         self.create_video_tables()
+        self.create_short_tables()
         self.create_channel_tables()
+        self.create_playlist_tables()
         self.create_similarweb_tables()
         self.create_news_tables()
         self.create_product_tables()
@@ -184,6 +186,89 @@ class Database:
         except Exception as e:
             logger.error(f'Error inesperado al insertar/actualizar registros en la tabla VIDEO_RECORDS: {str(e)}. Query: {query}, Parámetros: {params}')
 
+    ############################################################################
+    # Tablas de shorts de Youtube
+    ############################################################################
+    def create_short_tables(self):
+        """
+        Crea las tablas relacionadas con los shorts de YouTube.
+        """
+        try:
+            query = '''
+            CREATE TABLE IF NOT EXISTS SHORT (
+                SHORT_ID TEXT PRIMARY KEY,
+                SHORT_NAME TEXT,
+                CHANNEL_ID TEXT,
+                SHORT_LEN TEXT,
+                TAGS TEXT,
+                PUBLISH_DATE DATE,
+                UPDATE_DATE DATE
+            )
+            '''
+            self.exec(query)
+        except sqlite3.Error as e:
+            logger.error(f'Error al crear la tabla SHORT_ID: {str(e)}. Query: {query}')
+        except Exception as e:
+            logger.error(f'Error inesperado al crear la tabla SHORT_ID: {str(e)}. Query: {query}')
+
+        try:
+            query = '''
+            CREATE TABLE IF NOT EXISTS SHORT_RECORDS (
+                RECORD_ID INTEGER PRIMARY KEY AUTOINCREMENT,
+                SHORT_ID_ID TEXT,
+                VIEWS INTEGER,
+                MOST_VIEWED_MOMENT TEXT,
+                LIKES INTEGER,
+                COMMENTS_COUNT INTEGER,
+                UPDATE_DATE DATE
+            )
+            '''
+            self.exec(query)
+        except sqlite3.Error as e:
+            logger.error(f'Error al crear la tabla SHORT_ID_RECORDS: {str(e)}. Query: {query}')
+        except Exception as e:
+            logger.error(f'Error inesperado al crear la tabla SHORT_ID_RECORDS: {str(e)}. Query: {query}')
+    
+    def insert_short_record(self, short_info):
+        """
+        Inserta un registro de short en las tablas correspondientes.
+        """
+        current_time = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+
+        try:
+            query = '''
+            INSERT OR REPLACE INTO SHORT (
+                SHORT_ID, SHORT_NAME, CHANNEL_ID, SHORT_LEN, TAGS, PUBLISH_DATE, UPDATE_DATE
+            ) VALUES (?, ?, ?, ?, ?, ?, ?)
+            '''
+            params = (
+                short_info['short_id'], short_info['title'], short_info['channel_id'],
+                short_info['length'], short_info['tags'], short_info['publish_date'],
+                current_time
+            )
+            self.exec(query, params)
+        except sqlite3.Error as e:
+            logger.error(f'Error al insertar/actualizar registros en la tabla SHORT: {str(e)}. Query: {query}, Parámetros: {params}')
+        except Exception as e:
+            logger.error(f'Error inesperado al insertar/actualizar registros en la tabla SHORT: {str(e)}. Query: {query}, Parámetros: {params}')
+
+        try:
+            query = '''
+            INSERT INTO SHORT_RECORDS (
+                SHORT_ID, VIEWS, MOST_VIEWED_MOMENT, LIKES, COMMENTS_COUNT, UPDATE_DATE
+            ) VALUES (?, ?, ?, ?, ?, ?)
+            '''
+            params = (
+                short_info['short_id'], short_info['views'], short_info['mvm'],
+                short_info['likes'], short_info['comment_count'],
+                current_time
+            )
+            self.exec(query, params)
+        except sqlite3.Error as e:
+            logger.error(f'Error al insertar/actualizar registros en la tabla SHORT_RECORDS: {str(e)}. Query: {query}, Parámetros: {params}')
+        except Exception as e:
+            logger.error(f'Error inesperado al insertar/actualizar registros en la tabla SHORT_RECORDS: {str(e)}. Query: {query}, Parámetros: {params}')
+
     #################################################################
     # Tablas de canales de Youtube
     #################################################################
@@ -262,6 +347,59 @@ class Database:
             logger.error(f'Error al insertar/actualizar registros en la tabla CHANNEL_RECORDS: {str(e)}. Query: {query}, Parámetros: {params}')
         except Exception as e:
             logger.error(f'Error inesperado al insertar/actualizar registros en la tabla CHANNEL_RECORDS: {str(e)}. Query: {query}, Parámetros: {params}')
+
+    #################################################################
+    # Tablas de playlists de Youtube
+    #################################################################
+    def create_playlist_tables(self):
+        """
+        Crea las tablas relacionadas con los canales de YouTube.
+        """
+        try:
+            query = '''
+            CREATE TABLE IF NOT EXISTS PLAYLIST (
+                PLAYLIST_ID TEXT PRIMARY KEY,
+                PLAYLIST_NAME TEXT,
+                CHANNEL_ID TEXT,
+                UPDATE_DATE DATE
+            )
+            '''
+            self.exec(query)
+        except sqlite3.Error as e:
+            logger.error(f'Error al crear la tabla PLAYLIST: {str(e)}. Query: {query}')
+        except Exception as e:
+            logger.error(f'Error inesperado al crear la tabla PLAYLIST: {str(e)}. Query: {query}')
+
+        try:
+            query = '''
+            CREATE TABLE IF NOT EXISTS PLAYLIST_RECORDS (
+                RECORD_ID INTEGER PRIMARY KEY AUTOINCREMENT,
+                PLAYLIST_ID TEXT,
+                VIDEOS_COUNT INTEGER,
+                TOTAL_VIEWS INTEGER,
+                LIKES INTEGER,
+                UPDATE_DATE DATE
+            )
+            '''
+            self.exec(query)
+        except sqlite3.Error as e:
+            logger.error(f'Error al crear la tabla PLAYLIST_RECORDS: {str(e)}. Query: {query}')
+        except Exception as e:
+            logger.error(f'Error inesperado al crear la tabla PLAYLIST_RECORDS: {str(e)}. Query: {query}')
+            
+        try:
+            query = '''
+            CREATE TABLE IF NOT EXISTS PLAYLIST_VIDEO (
+                PLAYLIST_ID TEXT PRIMARY KEY,
+                VIDEO_ID TEXT,
+                UPDATE_DATE DATE
+            )
+            '''
+            self.exec(query)
+        except sqlite3.Error as e:
+            logger.error(f'Error al crear la tabla PLAYLIST_VIDEO: {str(e)}. Query: {query}')
+        except Exception as e:
+            logger.error(f'Error inesperado al crear la tabla PLAYLIST_VIDEO: {str(e)}. Query: {query}')
 
     #################################################################
     # Tablas de paginas de SimilarWeb
