@@ -530,6 +530,82 @@ class YoutubeAPI:
         data['mvm'] = '00:00:00'
         
         return data
+    
+    def fetch_short_data(self, short_id):
+        """
+        Obtiene datos relevantes de un short de YouTube dado su ID.
+        
+        Args:
+            short_id (str): El ID del short de YouTube.
+        
+        Returns:
+            Lo mismo que retorna la funcion fetch_video_data()
+        """
+        data = self.fetch_video_data(short_id)
+        data['short_id'] = data['video_id']
+        return data
+    
+    def fetch_playlist_data(self, playlist_id):
+        """
+        Obtiene datos relevantes de una playlist de YouTube dado su ID.
+        
+        Args:
+            playlist_id (str): El ID de la playlist de YouTube.
+        
+        Returns:
+            dict: Un diccionario con los datos de la playlist.
+                - 'id': ID de la playlist.
+                - 'title': Título de la playlist.
+                - 'channel_id': ID del canal al que pertenece el video.
+                - 'channel_name': Nombre del canal al que pertenece el video.
+                - 'publish_date': Fecha de publicación de la playlist (en formato 'YYYY/MM/DD HH:MM:SS').
+                - 'views': Número de vistas de la playlist.
+                - 'likes': Número de "me gusta" de la playlist.
+                - 'n_videos': Duración de la playlist en formato 'HH:MM:SS'.
+        """
+        # Verificar si la API de YouTube está habilitada
+        if not self.is_enabled():
+            logger.warning('La API de YouTube no está habilitada. Saliendo de la función fetch_video_data.')
+            return {}
+        
+        # Si no se le da un ID de canal salgo de la ejecucion
+        if not playlist_id:
+            raise ValueError('Se necesita un ID de video para obtener información en la función fetch_video_data().')
+        
+        # Inicializar el diccionario de datos
+        data = {}
+        
+        try:
+            # Realizar una solicitud para obtener los datos de la playlist desde la API de YouTube
+            self.request = self.youtube.playlists().list(
+                part='contentDetails,id,snippet',
+                id=playlist_id,
+            )
+            response = self.execute()
+            
+            # Obtener los datos del video si la respuesta es válida
+            if 'items' in response and response['items']:
+                item = response['items'][0]
+                
+                # Obtener el ID del video
+                data['playlist_id'] = item.get('id', playlist_id) 
+                data['publish_date'] = item['snippet']['publishedAt']
+                data['channel_id'] = item['snippet']['channelId']
+                data['channel_name'] = item['snippet']['channelTitle']
+                data['title'] = item['snippet']['title']
+                data['views'] = 0
+                data['likes'] = 0
+                data['n_videos'] = item['contentDetails']['itemCount']
+
+                logger.info(data)
+            
+        except Exception as e:
+            logger.error(f'Se produjo un error al obtener la información para la playlist {playlist_id}. Error: {e}')
+        
+        # Placeholder para el tiempo medio de visualización de la playlist (actualmente no implementado)
+        data['mvm'] = '00:00:00'
+        
+        return data
 
 if __name__ == '__main__':
     # Ejemplo de uso

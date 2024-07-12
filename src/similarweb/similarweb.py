@@ -184,7 +184,7 @@ class SimilarWebWebsite:
     # Valores por defecto para los atributos de la clase
     BASE_URL = 'https://www.similarweb.com/website/'
     DEBUG = True
-    SAVE_HTML = False
+    DEFAULT_SAVE_HTML = False
     DEFAULT_VALUES = {
         'domain_id': '',
         'domain': '',
@@ -209,6 +209,7 @@ class SimilarWebWebsite:
         self.set_default_values()
         self.data_loaded = False
         self.html_content = None
+        self.save_html = getenv('SIMILARWEB_SAVE_HTML', self.DEFAULT_SAVE_HTML)
         self.fetch_status = False
         self.filename = filename
         

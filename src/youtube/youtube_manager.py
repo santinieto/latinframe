@@ -1,5 +1,7 @@
 from src.youtube.youtube_channel import YoutubeChannel
 from src.youtube.youtube_video import YoutubeVideo
+from src.youtube.youtube_short import YoutubeShort
+from src.youtube.youtube_playlist import YoutubePlaylist
 from src.youtube.youtube_api import YoutubeAPI
 from src.logger.logger import Logger
 from src.database.db import Database
@@ -41,6 +43,34 @@ def initialize_youtube_channel(input_data, verbose=False):
     except Exception as e:
         logger.error(f'Error al inicializar el canal para la ID/URL [{input_data}]. Error: {str(e)}')
         return None
+
+################################################################################
+# Define tu función de inicialización de canal independiente
+################################################################################
+def initialize_youtube_playlist(input_data, verbose=False):
+    """
+    Inicializa un canal de YouTube utilizando su ID.
+
+    Args:
+        input_data (str): El ID o URL del canal de YouTube.
+
+    Returns:
+        YoutubeChannel: El objeto de canal de YouTube inicializado.
+    """
+    try:
+        if is_url_arg(input_data):
+            playlist = YoutubePlaylist()
+            playlist.fetch_html_content(url_type='url', scrap_url=input_data)
+            playlist.fetch_data()
+        else:
+            playlist = YoutubePlaylist(playlist_id=input_data)
+            playlist.fetch_data()
+        if verbose:
+            logger.info(str(playlist))
+        return playlist
+    except Exception as e:
+        logger.error(f'Error al inicializar el canal para la ID/URL [{input_data}]. Error: {str(e)}')
+        return None
     
 ################################################################################
 # Define tu función de inicialización de video independiente
@@ -69,7 +99,38 @@ def initialize_youtube_video(input_data, verbose=False):
     except Exception as e:
         logger.error(f'Error al inicializar el video para la ID/URL [{input_data}]. Error: {str(e)}')
         return None
+    
+################################################################################
+# Define tu función de inicialización de short independiente
+################################################################################
+def initialize_youtube_short(input_data, verbose=False):
+    """
+    Inicializa un short de YouTube utilizando su ID.
 
+    Args:
+        input_data (str): El ID o URL del short de YouTube.
+
+    Returns:
+        YoutubeChannel: El objeto de short de YouTube inicializado.
+    """
+    try:
+        if is_url_arg(input_data):
+            short = YoutubeShort()
+            short.fetch_html_content(url_type='url', scrap_url=input_data)
+            short.fetch_data()
+        else:
+            short = YoutubeShort(short_id=input_data)
+            short.fetch_data()
+        if verbose:
+            logger.info(str(short))
+        return short
+    except Exception as e:
+        logger.error(f'Error al inicializar el short para la ID/URL [{input_data}]. Error: {str(e)}')
+        return None
+
+################################################################################
+# Define tu función de inicialización de playlist independiente
+################################################################################
 def initialize_youtube_video_from_db(video_id, verbose=False):
     """
     Inicializa un video de YouTube utilizando su ID.
