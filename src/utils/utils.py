@@ -1,19 +1,29 @@
-# Importar librerias
-from   bs4 import BeautifulSoup
-import requests
-import pandas as pd
-import re
-import random
-import json
-import platform
+# Imports estándar de Python
 import os
 from datetime import timedelta, datetime
 from pathlib import Path
 import time
+# import sys
 
+# Añade el directorio raíz del proyecto a sys.path
+# current_path = os.path.dirname(os.path.abspath(__file__))
+# project_root = os.path.abspath(os.path.join(current_path, '..', '..'))  # Ajusta según la estructura de tu proyecto
+# sys.path.append(project_root)
+
+# Imports de terceros
+from bs4 import BeautifulSoup
+import requests
+import re
+import random
+import json
+import platform
+
+# Imports locales
 from src.logger.logger import Logger
 
-# Crear un logger
+################################################################################
+# Genero una instancia del Logger
+################################################################################
 logger = Logger(os.path.basename(__file__)).get_logger()
 
 # Variables globables

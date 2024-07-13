@@ -1,10 +1,24 @@
+# Imports estándar de Python
+import os
+# import sys
+
+# Añade el directorio raíz del proyecto a sys.path
+# current_path = os.path.dirname(os.path.abspath(__file__))
+# project_root = os.path.abspath(os.path.join(current_path, '..', '..'))  # Ajusta según la estructura de tu proyecto
+# sys.path.append(project_root)
+
+# Imports de terceros
+# Ninguna en este set
+
+# Imports locales
 from src.logger.logger import Logger
 from src.youtube.youtube_api import YoutubeAPI
 from src.utils.mail import *
 from src.utils.driver import Driver
-import os
 
-# Crear un logger
+################################################################################
+# Genero una instancia del Logger
+################################################################################
 logger = Logger(os.path.basename(__file__)).get_logger()
 
 def menu_tests(app):

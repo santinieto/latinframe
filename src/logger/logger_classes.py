@@ -1,7 +1,19 @@
-import logging
-import os
+# Imports estándar de Python
 import datetime
+import os
 import traceback
+# import sys
+
+# Añade el directorio raíz del proyecto a sys.path
+# current_path = os.path.dirname(os.path.abspath(__file__))
+# project_root = os.path.abspath(os.path.join(current_path, '..', '..'))  # Ajusta según la estructura de tu proyecto
+# sys.path.append(project_root)
+
+# Imports de terceros
+import logging
+
+# Imports locales
+# Ninguno en este set
 
 # Define los formatters
 class InfoFormatter(logging.Formatter):

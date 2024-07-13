@@ -1,15 +1,25 @@
-from src.utils.utils import get_http_response
-from src.utils.utils import get_formatted_date
-from src.utils.utils import clean_and_parse_number
-from src.utils.utils import getenv
-from src.logger.logger import Logger
-from src.youtube.youtube_api import YoutubeAPI
+# Imports estándar de Python
+import os
+# import sys
+
+# Añade el directorio raíz del proyecto a sys.path
+# current_path = os.path.dirname(os.path.abspath(__file__))
+# project_root = os.path.abspath(os.path.join(current_path, '..', '..'))  # Ajusta según la estructura de tu proyecto
+# sys.path.append(project_root)
+
+# Imports de terceros
 import re
 import json
 from bs4 import BeautifulSoup
-import os
 
-# Crear un logger
+# Imports locales
+from src.utils.utils import get_http_response, get_formatted_date, clean_and_parse_number, getenv
+from src.logger.logger import Logger
+from src.youtube.youtube_api import YoutubeAPI
+
+################################################################################
+# Genero una instancia del Logger
+################################################################################
 logger = Logger(os.path.basename(__file__)).get_logger()
 
 class YoutubeChannel:

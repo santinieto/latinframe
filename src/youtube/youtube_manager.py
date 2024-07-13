@@ -1,3 +1,17 @@
+# Imports estándar de Python
+import os
+# import sys
+
+# Añade el directorio raíz del proyecto a sys.path
+# current_path = os.path.dirname(os.path.abspath(__file__))
+# project_root = os.path.abspath(os.path.join(current_path, '..', '..'))  # Ajusta según la estructura de tu proyecto
+# sys.path.append(project_root)
+
+# Imports de terceros
+from functools import partial
+from multiprocessing import Pool, cpu_count
+
+# Imports locales
 from src.youtube.youtube_channel import YoutubeChannel
 from src.youtube.youtube_video import YoutubeVideo
 from src.youtube.youtube_short import YoutubeShort
@@ -5,14 +19,10 @@ from src.youtube.youtube_playlist import YoutubePlaylist
 from src.youtube.youtube_api import YoutubeAPI
 from src.logger.logger import Logger
 from src.database.db import Database
-from src.utils.utils import is_url_arg
-from src.utils.utils import getenv
-from functools import partial
-from multiprocessing import Pool, cpu_count
-import os
+from src.utils.utils import is_url_arg, getenv
 
 ################################################################################
-# Crear un logger
+# Genero una instancia del Logger
 ################################################################################
 logger = Logger(os.path.basename(__file__)).get_logger()
 

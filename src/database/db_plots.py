@@ -1,6 +1,19 @@
+# Imports estándar de Python
+# import sys
+# import os
+
+# Añade el directorio raíz del proyecto a sys.path
+# current_path = os.path.dirname(os.path.abspath(__file__))
+# project_root = os.path.abspath(os.path.join(current_path, '..', '..'))  # Ajusta según la estructura de tu proyecto
+# sys.path.append(project_root)
+
+# Imports de terceros
 import pandas as pd
-import matplotlib.pyplot as plt
 import matplotlib.dates as mdates
+import matplotlib.pyplot as plt
+
+# Imports locales
+# Ninguno en este set
 
 def plot_channel_tables(channel_id_sel=None, df_1=None, df_2=None):
     """

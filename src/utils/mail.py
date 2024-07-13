@@ -1,11 +1,24 @@
+# Imports estándar de Python
+import os
+# import sys
+
+# Añade el directorio raíz del proyecto a sys.path
+# current_path = os.path.dirname(os.path.abspath(__file__))
+# project_root = os.path.abspath(os.path.join(current_path, '..', '..'))  # Ajusta según la estructura de tu proyecto
+# sys.path.append(project_root)
+
+# Imports de terceros
 import smtplib
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 from email.mime.application import MIMEApplication
-from src.logger.logger import Logger
-import os
 
-# Crear un logger
+# Imports locales
+from src.logger.logger import Logger
+
+################################################################################
+# Genero una instancia del Logger
+################################################################################
 logger = Logger(os.path.basename(__file__)).get_logger()
 
 def send_mail(subject='Subject', message='Body', dest='santi.nieto@live.com', filename=None, show_mail=True):

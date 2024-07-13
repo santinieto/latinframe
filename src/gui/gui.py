@@ -1,12 +1,25 @@
+# Imports estándar de Python
+import sys
+import os
+
+# Añade el directorio raíz del proyecto a sys.path
+# current_path = os.path.dirname(os.path.abspath(__file__))
+# project_root = os.path.abspath(os.path.join(current_path, '..', '..'))  # Ajusta según la estructura de tu proyecto
+# sys.path.append(project_root)
+
+# Imports de terceros
 import tkinter as tk
 from tkinter import ttk
-import sys, os
-from src.utils.utils import getenv
-from src.logger.logger import Logger
-from src.logger.logger_classes import InfoFormatter, ErrorFormatter
 import logging
 
-# Crear un logger
+# Imports locales
+from src.utils.utils import getenv
+from src.logger.logger import Logger
+from src.logger.logger_classes import InfoFormatter
+
+################################################################################
+# Genero una instancia del Logger
+################################################################################
 logger = Logger(os.path.basename(__file__)).get_logger()
 
 def get_app():

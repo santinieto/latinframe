@@ -1,17 +1,30 @@
+# Imports estándar de Python
+# import sys
 import os
-import pandas as pd
+
+# Añade el directorio raíz del proyecto a sys.path
+# current_path = os.path.dirname(os.path.abspath(__file__))
+# project_root = os.path.abspath(os.path.join(current_path, '..', '..'))  # Ajusta según la estructura de tu proyecto
+# sys.path.append(project_root)
+
+# Imports estándar de Python
 import datetime
 import shutil
 
+# Imports de terceros
+import pandas as pd
+
+# Imports locales
 from src.database.db import Database
 from src.database.db_clean import *
-from src.utils.utils import get_formatted_date
-from src.utils.utils import get_dir_files
-from src.utils.utils import get_newest_file
 from src.logger.logger import Logger
+from src.utils.utils import get_dir_files, get_formatted_date, get_newest_file
     
-# Crear un logger
+################################################################################
+# Genero una instancia del Logger
+################################################################################
 logger = Logger(os.path.basename(__file__)).get_logger()
+
 
 def youtube_db_fetch():
     current_time = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')

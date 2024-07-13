@@ -1,3 +1,17 @@
+# Imports estándar de Python
+import os
+import time
+from urllib.parse import urlparse, urlunparse
+from pathlib import Path
+import threading
+# import sys
+
+# Añade el directorio raíz del proyecto a sys.path
+# current_path = os.path.dirname(os.path.abspath(__file__))
+# project_root = os.path.abspath(os.path.join(current_path, '..', '..'))  # Ajusta según la estructura de tu proyecto
+# sys.path.append(project_root)
+
+# Imports de terceros
 from selenium import webdriver
 from selenium.webdriver.chrome.service import Service as ChromeService
 from selenium.webdriver.chrome.options import Options as ChromeOptions
@@ -5,23 +19,21 @@ from selenium.webdriver.firefox.service import Service as FirefoxService
 from selenium.webdriver.firefox.options import Options as FirefoxOptions
 from selenium.webdriver.edge.service import Service as EdgeService
 from selenium.webdriver.edge.options import Options as EdgeOptions
-from selenium.common.exceptions import NoSuchElementException
-from selenium.common.exceptions import WebDriverException, TimeoutException
+from selenium.common.exceptions import NoSuchElementException, WebDriverException, TimeoutException
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
-import os
-import time
-from urllib.parse import urlparse, urlunparse
-from pathlib import Path
-import threading
+from webdriver_manager.chrome import ChromeDriverManager
+from webdriver_manager.firefox import GeckoDriverManager
+from webdriver_manager.microsoft import EdgeChromiumDriverManager
 
+# Imports locales
 from src.logger.logger import Logger
 from src.utils.environment import set_environment
 from src.utils.utils import getenv
 
 ################################################################################
-# Crear un logger
+# Genero una instancia del Logger
 ################################################################################
 logger = Logger(os.path.basename(__file__)).get_logger()
 
@@ -36,9 +48,10 @@ class Driver:
     DRIVERS_PATH = r'drivers/'
     RESULTS_PATH = r'results/similarweb/'
     DEFAULT_BROWSER = 'chrome'
-    DEFAULT_WAIT_TIME = 8
+    DEFAULT_TIMEOUT = 8
+    DEFAULT_MAX_CONCURRENCE = 4
     
-    def __init__(self, max_concurrent=4): # FIXME: NO ESTOY USANDO BROWSER
+    def __init__(self):
         """
         Inicializa el objeto Driver con el navegador especificado (por defecto, Chrome).
 
@@ -50,8 +63,8 @@ class Driver:
 
         # Atributos
         self.default_browser = getenv('DRIVER_BROWSER', self.DEFAULT_BROWSER)
-        self.wait_time = getenv('DRIVER_WAIT_TIME', self.DEFAULT_WAIT_TIME)
-        self.max_concurrent = max_concurrent
+        self.timeout = getenv('DRIVER_TIMEOUT', self.DEFAULT_TIMEOUT)
+        self.max_concurrent = getenv('DRIVER_MAX_CONCURRENCE', self.DEFAULT_MAX_CONCURRENCE) 
         self.drivers_path = self.DRIVERS_PATH
         self.results_path = self.RESULTS_PATH
         self.html_contents = {}
@@ -100,16 +113,24 @@ class Driver:
         
         # Obtengo los controladores del navegador
         browser_options = self._get_browser_options(browser)
+        try:
+            browser_options = self._get_browser_options(browser)
+        except ValueError as e:
+            logger.error(f'No se pudieron obtener las configuraciones para el driver [{browser}]. Error: {e}')
+            return None
 
         try:
             # Configuración del navegador
+            # Si quiero usar los drivers que tengo descargados
             service = browser_options["service"](os.path.join(self.drivers_path, browser_options["driver_name"]))
+            # Si quiero instalar los drivers cada vez
+            # service = browser_options["service"]( browser_options["driver_manager"]().install() )
             options = browser_options["options"]()
 
-            for arg in browser_options["args"]:
+            for arg in browser_options.get("args", []):
                 options.add_argument(arg)
             
-            for key, value in browser_options["experimental_options"].items():
+            for key, value in browser_options.get("experimental_options", {}).items():
                 options.add_experimental_option(key, value)
 
             # Inicialización del WebDriver
@@ -132,13 +153,15 @@ class Driver:
             "chrome": {
                 "driver_name": "chromedriver.exe",
                 "service": ChromeService,
+                "driver_manager": ChromeDriverManager,
                 "options": ChromeOptions,
-                "args": ["--disable-usb-device-detection"],
+                "args": ["--disable-usb-device-detection", "--log-level=3"],
                 "experimental_options": {'excludeSwitches': ['enable-logging']}
             },
             "firefox": {
                 "driver_name": "geckodriver.exe",
                 "service": FirefoxService,
+                "driver_manager": GeckoDriverManager,
                 "options": FirefoxOptions,
                 "args": [],
                 "experimental_options": {}
@@ -146,6 +169,7 @@ class Driver:
             "edge": {
                 "driver_name": "msedgedriver.exe",
                 "service": EdgeService,
+                "driver_manager": EdgeChromiumDriverManager,
                 "options": EdgeOptions,
                 "args": [],
                 "experimental_options": {}
@@ -192,7 +216,7 @@ class Driver:
     ############################################################################
     # Metodos de uso
     ############################################################################
-    def open_url(self, driver_key='0', url='http://www.google.com/', wait_time=None, element_selector=None, browser=None):
+    def open_url(self, driver_key='0', url='http://www.google.com/', element_selector=None, browser=None, timeout=None):
         """
         Carga una página web y guarda el HTML en un archivo.
 
@@ -204,11 +228,11 @@ class Driver:
         """
         # Valores por defecto
         browser = browser or self.default_browser
-        wait_time = wait_time or self.wait_time
+        timeout = timeout or self.timeout
         
         if driver_key not in self.drivers:
             self.drivers[driver_key] = self.set_driver(browser)
-        
+            
         if not self.drivers[driver_key]:
             logger.error(f"El driver [{driver_key}] no está inicializado. No se puede obtener la URL [{url}].")
             return
@@ -225,11 +249,11 @@ class Driver:
             
             # Establezco las condiciones
             if element_selector:
-                WebDriverWait(self.drivers[driver_key], wait_time).until(
+                WebDriverWait(self.drivers[driver_key], timeout).until(
                     EC.presence_of_element_located((By.CSS_SELECTOR, element_selector))
                 )
-            elif wait_time:
-                time.sleep(wait_time)
+            elif timeout:
+                WebDriverWait(self.drivers[driver_key], timeout)
             
             # Actualizo y guardo el contenido HTML
             self._update_html_content(driver_key)
@@ -239,44 +263,61 @@ class Driver:
             # Cierro el driver actual
             self.close_driver(driver_key)
         except TimeoutException as te:
-            logger.error(f"Elemento HTML [{element_selector}] no encontrado en la URL [{url}] luego de [{wait_time}] segundos.")
+            logger.error(f"Elemento HTML [{element_selector}] no encontrado en la URL [{url}] luego de [{timeout}] segundos.")
+            self.close_driver(driver_key)
         except ValueError as ve:
             logger.error(f"URL inválida [{url}]. Error: {ve}")
+            self.close_driver(driver_key)
         except Exception as e:
             logger.error(f"Error desconocido al cargar la URL [{url}]. Error: {e}.")
+            self.close_driver(driver_key)
 
-    def open_multiple_urls(self, urls, wait_time=None, element_selector=None, browser=None):
+    def open_multiple_urls(self, urls, timeout=None, element_selector=None, browser=None):
         """
         Abre múltiples URLs en diferentes hilos.
 
         Args:
             urls (list): Lista de URLs a cargar.
-            wait_time (int, optional): Tiempo en segundos que se espera antes de cerrar el navegador.
+            timeout (int, optional): Tiempo en segundos que se espera antes de cerrar el navegador.
             element_selector (str, optional): Selector del elemento HTML que se espera antes de cerrar el navegador.
         """
-        semaphore = threading.Semaphore(self.max_concurrent)
-        threads = []
+        # semaphore = threading.Semaphore(self.max_concurrent)
+        # threads = []
         
         # Valores por defecto
         browser = browser or self.default_browser
-        wait_time = wait_time or self.wait_time
+        timeout = timeout or self.timeout
         
         # Me aseguro que sea una lista porque sino voy a recorrer letra por letra
         # de la cadena
         if not isinstance(urls, list):
             urls = [urls]
+        
+        # NOTA: Este ciclo for anda bien pero no ejecuta nada en paralelo.
+        # La espera del timeout frena la ejecucion del sistema directamente.
+        for url in urls:
+            while len(self.drivers) >= self.max_concurrent:
+                logger.debug("Todos los drivers estan ocupados")
+                time.sleep(1)
+            
+            driver_key = f"driver_{str(time.time()).replace('.','')}"  # Usando un identificador único basado en el tiempo
+            
+            self.open_url(
+                driver_key=driver_key, url=url, timeout=timeout,
+                element_selector=element_selector, browser=browser
+            )
 
-        # Abro cada URL
-        for i, url in enumerate(urls):
-            args = (url, semaphore, wait_time, element_selector, browser)
-            thread = threading.Thread(target=self._open_url_with_semaphore, args=args)
-            threads.append(thread)
-            thread.start()
+        # # Abro cada URL
+        # for i, url in enumerate(urls):
+        #     args = (url, semaphore, timeout, element_selector, browser)
+        #     thread = threading.Thread(target=self._open_url_with_semaphore, args=args)
+        #     threads.append(thread)
+        #     thread.start()
 
-        for thread in threads:
-            thread.join()
+        # for thread in threads:
+        #     thread.join()
 
-    def _open_url_with_semaphore(self, url, semaphore, wait_time=None, element_selector=None, browser='chrome'):
+    def _open_url_with_semaphore(self, url, semaphore, timeout=None, element_selector=None, browser='chrome'):
         """
         Función interna para abrir una URL con un semáforo para controlar el número máximo de páginas abiertas simultáneamente.
 
@@ -284,12 +325,15 @@ class Driver:
             driver_key (str): Clave para identificar la instancia del driver.
             url (str): La URL de la página web a cargar.
             semaphore (threading.Semaphore): Semáforo para controlar el acceso concurrente.
-            wait_time (int, optional): Tiempo en segundos que se espera antes de cerrar el navegador.
+            timeout (int, optional): Tiempo en segundos que se espera antes de cerrar el navegador.
             element_selector (str, optional): Selector del elemento HTML que se espera antes de cerrar el navegador.
         """
         with semaphore:
             driver_key = f"driver_{threading.get_ident()}"
-            self.open_url(driver_key, url, wait_time, element_selector, browser)
+            self.open_url(
+                driver_key=driver_key, url=url, timeout=timeout,
+                element_selector=element_selector, browser=browser
+            )
             self.close_driver(driver_key)
 
     def open_url_and_wait(self, url, driver_key='0', timeout=10, browser=None):
@@ -308,7 +352,7 @@ class Driver:
         """
         # Valores por defecto
         browser = browser or self.default_browser
-        wait_time = wait_time or self.wait_time
+        timeout = timeout or self.timeout
         
         if driver_key not in self.drivers:
             self.drivers[driver_key] = self.set_driver(browser)
@@ -324,7 +368,7 @@ class Driver:
             self.drivers[driver_key].get(url)
             
             # Espero la cantidad de tiempo que el usuario pide
-            time.sleep(timeout)
+            WebDriverWait(self.drivers[driver_key], timeout)
             
             # Actualizar y guardo el contenido HTML
             self._update_html_content(driver_key)
@@ -453,7 +497,7 @@ def ajax_complete(driver):
 # Test principal del programa
 ################################################################################
 if __name__ == "__main__":
-    set_environment()
+    set_environment('settings.json')
     
     # Creo el objeto de tipo driver
     driver_manager = Driver()

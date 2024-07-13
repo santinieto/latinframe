@@ -1,8 +1,18 @@
-import pandas as pd
-import numpy as np
+# Imports estándar de Python
+# import os
+# import sys
 
+# Añade el directorio raíz del proyecto a sys.path
+# current_path = os.path.dirname(os.path.abspath(__file__))
+# project_root = os.path.abspath(os.path.join(current_path, '..', '..'))  # Ajusta según la estructura de tu proyecto
+# sys.path.append(project_root)
+
+# Imports de terceros
+import numpy as np
+import pandas as pd
+
+# Imports locales
 from src.database.db_plots import *
-from src.utils.utils import fit_time_to_24_hours
 from src.utils.utils import time_to_seconds
 
 def has_rows_w_nulls(df):

@@ -1,17 +1,22 @@
+# Imports estándar de Python
 import os
-import re
-import json
-import requests
-from pytube import YouTube
-from datetime import datetime
+# import sys
+
+# Añade el directorio raíz del proyecto a sys.path
+# current_path = os.path.dirname(os.path.abspath(__file__))
+# project_root = os.path.abspath(os.path.join(current_path, '..', '..'))  # Ajusta según la estructura de tu proyecto
+# sys.path.append(project_root)
+
+# Imports de terceros
 from bs4 import BeautifulSoup
 
+# Imports locales
 from src.logger.logger import Logger
-from src.utils.utils import get_formatted_date
-from src.utils.utils import get_similarweb_url_tuple
-from src.utils.utils import getenv
+from src.utils.utils import get_formatted_date, get_similarweb_url_tuple, getenv
 
-# Crear un logger
+################################################################################
+# Genero una instancia del Logger
+################################################################################
 logger = Logger(os.path.basename(__file__)).get_logger()
 
 class SimilarWebTopWebsitesTable:
@@ -156,7 +161,8 @@ class SimilarWebTopWebsitesTable:
                 self.row_data.append(row_dicc)
             
             self.data_loaded = True
-            logger.info('Filas de datos extraídas correctamente.')
+            if self.DEBUG:
+                logger.debug('Filas de datos extraídas correctamente.')
 
         except Exception as e:
             msg = f'Error al intentar obtener las filas de la tabla: {str(e)}'
@@ -169,7 +175,8 @@ class SimilarWebTopWebsitesTable:
             for data in self.row_data:
                 url, alias = get_similarweb_url_tuple(data['domain'])
                 self.url_list.append((url, alias))
-            logger.info('Lista de URLs generada correctamente.')
+            if self.DEBUG:
+                logger.debug('Lista de URLs generada correctamente.')
             return self.url_list
 
         except Exception as e:
@@ -413,7 +420,8 @@ class SimilarWebWebsite:
 
             # Actualiza la información del sitio con los datos obtenidos del scraping
             self.load_from_dict(site_data)
-            logger.info("Los datos se cargaron exitosamente mediante scraping de contenido HTML.")
+            if self.DEBUG:
+                logger.debug("Los datos se cargaron exitosamente mediante scraping de contenido HTML.")
             return True
 
         except Exception as e:

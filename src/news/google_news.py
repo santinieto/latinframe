@@ -1,20 +1,32 @@
+# Imports estándar de Python
+import os
+# import sys
+
+# Añade el directorio raíz del proyecto a sys.path
+# current_path = os.path.dirname(os.path.abspath(__file__))
+# project_root = os.path.abspath(os.path.join(current_path, '..', '..'))  # Ajusta según la estructura de tu proyecto
+# sys.path.append(project_root)
+
+# Imports de terceros
 import re
-from unidecode import unidecode
-from datetime import datetime, timedelta
 import urllib.parse
 import requests
 from functools import partial
 from multiprocessing import Pool, cpu_count
 from bs4 import BeautifulSoup
 import time
+from unidecode import unidecode
 
+# Imports locales
 from src.news.new import New
 from src.logger.logger import Logger
 from src.utils.utils import get_http_response, getenv
 from src.database.db import Database
-import os
+from datetime import datetime, timedelta
 
-# Crear un logger
+################################################################################
+# Genero una instancia del Logger
+################################################################################
 logger = Logger(os.path.basename(__file__)).get_logger()
 
 # Define tu función de inicialización de cada objeto

@@ -1,9 +1,23 @@
+# Imports estándar de Python
 import os
 import json
 from pathlib import Path
+# import sys
+
+# Añade el directorio raíz del proyecto a sys.path
+# current_path = os.path.dirname(os.path.abspath(__file__))
+# project_root = os.path.abspath(os.path.join(current_path, '..', '..'))  # Ajusta según la estructura de tu proyecto
+# sys.path.append(project_root)
+
+# Imports de terceros
+# Ninguno en este set
+
+# Imports locales
 from src.logger.logger import Logger
 
-# Crear un logger
+################################################################################
+# Genero una instancia del Logger
+################################################################################
 logger = Logger(os.path.basename(__file__)).get_logger()
 
 # Variables globables

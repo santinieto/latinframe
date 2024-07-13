@@ -1,17 +1,25 @@
-from multiprocessing import cpu_count
-import time
+# Imports estándar de Python
 import os
+# import sys
+# import sys
 
+# Añade el directorio raíz del proyecto a sys.path
+# current_path = os.path.dirname(os.path.abspath(__file__))
+# project_root = os.path.abspath(os.path.join(current_path, '..', '..'))  # Ajusta según la estructura de tu proyecto
+# sys.path.append(project_root)
+
+# Imports de terceros
+from multiprocessing import cpu_count
+
+# Imports locales
 from src.logger.logger import Logger
 from src.database.db import Database
 from src.utils.driver import Driver
-from src.utils.utils import SIMILARWEB_BASE_URL
-from src.utils.utils import get_similarweb_url_tuple, getenv
-from src.similarweb.similarweb import SimilarWebTopWebsitesTable
-from src.similarweb.similarweb import SimilarWebWebsite
-    
+from src.utils.utils import SIMILARWEB_BASE_URL, get_similarweb_url_tuple, getenv
+from src.similarweb.similarweb import SimilarWebTopWebsitesTable, SimilarWebWebsite
+
 ################################################################################
-# Crear un logger
+# Genero una instancia del Logger
 ################################################################################
 logger = Logger(os.path.basename(__file__)).get_logger()
 
@@ -146,7 +154,7 @@ class SimilarWebManager:
         if not self.skip_scrap:
             self.driver.open_multiple_urls(
                     urls = table_urls,
-                    wait_time = self.delay,
+                    timeout = self.delay,
                     element_selector = '.app-section__content'
                 )
         
@@ -201,7 +209,7 @@ class SimilarWebManager:
         if not self.skip_scrap:
             self.driver.open_multiple_urls(
                     urls = url_list,
-                    wait_time = self.delay,
+                    timeout = self.delay,
                     element_selector='.app-section__content'
                 )
         
@@ -300,7 +308,7 @@ class SimilarWebManager:
     ############################################################################
     # Gestion de paginas
     ############################################################################
-    def get_web(self, domain, delay=15):
+    def get_web(self, domain, timeout=15):
         """
         Obtengo los datos de un sitio web en particular
         
@@ -313,7 +321,7 @@ class SimilarWebManager:
             return
         
         # Me aseguro de tener una espera
-        delay = delay or self.delay
+        timeout = timeout or self.timeout
         
         # Armo la URL
         url = get_similarweb_url_tuple(domain)[0]
@@ -321,7 +329,7 @@ class SimilarWebManager:
         # Obtengo los datos del sitio
         self.driver.open_multiple_urls(
                 urls = url,
-                wait_time = delay,
+                timeout = timeout,
                 element_selector = '.app-section__content'
             )
 
@@ -451,7 +459,7 @@ if __name__ == '__main__':
     #similarweb_manager.fetch_data()
     
     # Prueba para obtener una pagina
-    # similarweb_manager.get_web('youtube.com')
+    similarweb_manager.get_web('youtube.com')
     
     # Prueba para agregar una pagina
-    similarweb_manager.add_web('gdsgsdgsgds.com')
+    # similarweb_manager.add_web('youtube.com')

@@ -1,20 +1,26 @@
-# Librerias que voy a necesitar
-from googleapiclient.discovery import build
-from googleapiclient.errors    import HttpError
-import json
-from datetime import datetime
-import pandas   as pd
-
-# Importo mis modulos y funciones
-from src.utils.environment import set_environment
-from src.utils.utils import transform_duration_format
-from src.utils.utils import safe_get_from_json
-from src.utils.utils import cprint
-from src.utils.utils import getenv
-from src.logger.logger import Logger
+# Imports estándar de Python
 import os
+from datetime import datetime
+import json
+# import sys
 
-# Crear un logger
+# Añade el directorio raíz del proyecto a sys.path
+# current_path = os.path.dirname(os.path.abspath(__file__))
+# project_root = os.path.abspath(os.path.join(current_path, '..', '..'))  # Ajusta según la estructura de tu proyecto
+# sys.path.append(project_root)
+
+# Imports de terceros
+from googleapiclient.discovery import build
+from googleapiclient.errors import HttpError
+import pandas as pd
+
+# Imports locales
+from src.utils.utils import transform_duration_format, safe_get_from_json, cprint, getenv
+from src.logger.logger import Logger
+
+################################################################################
+# Genero una instancia del Logger
+################################################################################
 logger = Logger(os.path.basename(__file__)).get_logger()
 
 # Creo la clase para levantar la API

@@ -1,4 +1,16 @@
+# Imports estándar de Python
+# Ninguno en este set
+
+# Añade el directorio raíz del proyecto a sys.path
+# current_path = os.path.dirname(os.path.abspath(__file__))
+# project_root = os.path.abspath(os.path.join(current_path, '..', '..'))  # Ajusta según la estructura de tu proyecto
+# sys.path.append(project_root)
+
+# Imports de terceros
 import unittest
+
+# Imports locales
+# Ninguno en este set
 
 def handle_test_args(args):
     # Defino un nombre por defecto al modulo

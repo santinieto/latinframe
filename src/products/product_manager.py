@@ -1,21 +1,26 @@
+# Imports estándar de Python
+import os
+# import sys
+
+# Añade el directorio raíz del proyecto a sys.path
+# current_path = os.path.dirname(os.path.abspath(__file__))
+# project_root = os.path.abspath(os.path.join(current_path, '..', '..'))  # Ajusta según la estructura de tu proyecto
+# sys.path.append(project_root)
+
+# Imports de terceros
 from multiprocessing import cpu_count
 import time
 
-import sys
-import os
-
-# Agregar la ruta del directorio principal al sys.path
-sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
-
+# Imports locales
 from src.logger.logger import Logger
 from src.database.db import Database
 from src.products.meli_utils import MeLiProductListings
 from src.products.ebay_utils import EbayProductListings
 from src.products.alibaba_utils import AlibabaProductListings
 from src.utils.utils import getenv
-    
+
 ################################################################################
-# Crear un logger
+# Genero una instancia del Logger
 ################################################################################
 logger = Logger(os.path.basename(__file__)).get_logger()
     
