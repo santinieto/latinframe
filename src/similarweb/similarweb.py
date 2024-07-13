@@ -28,6 +28,7 @@ class SimilarWebTopWebsitesTable:
     DEFAULT_SAVE_HTML = True
     BASE_URL = 'https://www.similarweb.com/'
     DEFAULT_FILENAME = 'html_top_websites.dat'
+    DEBUG = False
     
     def __init__(self, filename=None):
         self.filename = filename or self.DEFAULT_FILENAME
@@ -117,7 +118,8 @@ class SimilarWebTopWebsitesTable:
             # Obtengo los datos
             self.fetch_rows()
             
-            logger.info("Los datos se cargaron exitosamente mediante scraping de contenido HTML.")
+            if self.DEBUG:
+                logger.info("Los datos se cargaron exitosamente mediante scraping de contenido HTML.")
             return True
 
         except Exception as e:
@@ -190,7 +192,7 @@ class SimilarWebWebsite:
     ############################################################################
     # Valores por defecto para los atributos de la clase
     BASE_URL = 'https://www.similarweb.com/website/'
-    DEBUG = True
+    DEBUG = False
     DEFAULT_SAVE_HTML = False
     DEFAULT_VALUES = {
         'domain_id': '',

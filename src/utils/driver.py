@@ -50,6 +50,7 @@ class Driver:
     DEFAULT_BROWSER = 'chrome'
     DEFAULT_TIMEOUT = 8
     DEFAULT_MAX_CONCURRENCE = 4
+    DEBUG = False
     
     def __init__(self):
         """
@@ -209,7 +210,8 @@ class Driver:
             # Guardo el contenido HTML
             with file_path.open("w", encoding="utf-8") as file:
                 file.write(self.html_contents.get(driver_key, ''))
-            logger.info(f'Se guardó el contenido HTML en el archivo [{filename}]')
+            if self.DEBUG:
+                logger.info(f'Se guardó el contenido HTML en el archivo [{filename}]')
         except Exception as e:
             logger.error(f"Error al intentar guardar contenido HTML en el archivo [{filename}]. Error: {e}")
     

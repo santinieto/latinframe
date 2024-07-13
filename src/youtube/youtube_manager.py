@@ -192,7 +192,7 @@ class YoutubeManager:
     DEFAULT_ENABLE_MP = True
     DEFAULT_N_CORES = -1
     DEFAULT_DB_NAME = "latinframe.db"
-    DEBUG = True
+    DEBUG = False
 
     ############################################################################
     # Metodos de incializacion
@@ -528,7 +528,8 @@ class YoutubeManager:
         # Llamar al método insert_channel_record() de la base de datos y pasar el diccionario como argumento
         try:
             self.database.insert_video_record(video_data)
-            logger.info(f"Datos del canal '{video.channel_id}' insertados en la base de datos.")
+            if self.DEBUG:
+                logger.info(f"Datos del canal '{video.channel_id}' insertados en la base de datos.")
         except Exception as e:
             logger.error(f"Error al insertar datos del canal '{video.channel_id}' en la base de datos: {str(e)}")
     
