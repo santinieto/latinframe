@@ -771,6 +771,7 @@ class Database:
         """
         table_names = [
             'VIDEO', 'VIDEO_RECORDS', 'CHANNEL', 'CHANNEL_RECORDS',
+            'SHORT','SHORT_RECORDS','PLAYLIST','PLAYLIST_RECORDS','PLAYLIST_VIDEO',
             'NEWS', 'NEWSPAPERS', 'SIMILARWEB_DOMAINS', 'SIMILARWEB_RECORDS', 'TOPICS',
             'PRODUCT', 'PRODUCT_RECORDS'
         ]

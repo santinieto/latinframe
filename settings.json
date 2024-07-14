@@ -4,10 +4,15 @@
     "DB_NAME": "latinframe.db",
     
     "DRIVER_BROWSER": "chrome",
-    "DRIVER_WAIT_TIME": 8,
+    "DRIVER_TIMEOUT": 8,
+    "DRIVER_MAX_CONCURRENCE": 4,
     
     "UI_WIDTH": 1300,
     "UI_HEIGHT": 500,
+    "UI_WHITE": "#d8e9f0",
+    "UI_GRAY": "#33425b",
+    "UI_RED": "#f33535",
+    "UI_BLACK": "#29252c",
     
     "NEWS_SAVE_HTML": false,
     
@@ -16,12 +21,15 @@
     "PRODUCTS_ALIBABA_FETCH": true,
     "PRODUCTS_EBAY_FETCH": true,
     "PRODUCTS_ADD_CHANNEL_NAMES": false,
+    "PRODUCTS_SAVE_HTML": false,
     
     "SIMILARWEB_N_WEBS_FETCH": 10,
     "SIMILARWEB_SKIP_SCRAP": false,
     "SIMILARWEB_DELAY": 8,
+    "SIMILARWEB_N_CORES": 4,
+    "SIMILARWEB_SAVE_HTML": false,
     
-    "YOUTUBE_API_KEY": "YoutTubeAPIKey",
+    "YOUTUBE_API_KEY": "YOUR_API_KEY_HERE",
     "YOUTUBE_API_N_VIDEOS_FETCH": 10,
     "YOUTUBE_API_PAGE_RESULTS": 50,
     
@@ -32,8 +40,10 @@
     "YOUTUBE_CHANNEL_FETCH_SHORTS": true,
     
     "YOUTUBE_VIDEO_SAVE_HTML": true,
+    "YOUTUBE_SHORT_SAVE_HTML": true,
+    "YOUTUBE_PLAYLIST_SAVE_HTML": true,
     
-    "EMAIL_ADRESS" : "name.surname@platform.com",
-    "EMAIL_PASSWORD" : "password",
-    "EMAIL_PLATFORM" : "platform"
+    "EMAIL_ADRESS" : "your@email.com",
+    "EMAIL_PASSWORD" : "123456789",
+    "EMAIL_PLATFORM" : "outlook"
 }

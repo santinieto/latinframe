@@ -27,7 +27,7 @@ class TestYoutubeAPI(unittest.TestCase):
     def test_initialization_custom_config(self):
         # Establecer las variables de entorno
         custom_youtube_api_en = 'True'
-        custom_youtube_api_key = 'AIzaSyDSjdkzuNc2hJULHWShij4PbmhAIExIKq4'
+        custom_youtube_api_key = 'YOUR_API_KEY_HERE'
         custom_youtube_nvideos_fecth = 20
         custom_youtube_page_results = 100
 
