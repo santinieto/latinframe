@@ -2,16 +2,20 @@
 import os
 # import sys
 
-# Añade el directorio raíz del proyecto a sys.path
+# # Añade el directorio raíz del proyecto a sys.path
 # current_path = os.path.dirname(os.path.abspath(__file__))
 # project_root = os.path.abspath(os.path.join(current_path, '..', '..'))  # Ajusta según la estructura de tu proyecto
 # sys.path.append(project_root)
 
 # Imports de terceros
 import re
+import requests
+import json
+import datetime
 
 # Imports locales
 from src.utils.utils import get_http_response, get_formatted_date, getenv
+from src.database.db import Database
 from src.logger.logger import Logger
 from src.youtube.youtube_api import YoutubeAPI
 
@@ -106,7 +110,7 @@ class YoutubePlaylist:
             f"- Vistas de la playlist de YouTube: {self.views}\n"
             f"- Cantidad de Me Gusta de la playlist de YouTube: {self.likes}\n"
             f"- Cantidad de videos en la playlist de YouTube: {self.n_videos}\n"
-            f"- Fecha de publicación de la playlist de YouTube: {self.publish_date}"
+            f"- Fecha de publicación de la playlist de YouTube: {self.publish_date}\n"
             f"- Lista de IDs de los videos: {self.video_ids}"
         )
         return info_str
@@ -141,11 +145,11 @@ class YoutubePlaylist:
             
         # Define una URL por defecto para hacer scraping
         if scrap_url is None:
-            scrap_url = 'https://www.youtube.com/watch?v='
+            scrap_url = 'https://www.youtube.com/playlist?list='
 
         # Construye la URL de la playlist de YouTube según el tipo
         if url_type == 'id':
-            scrap_url = f'https://www.youtube.com/watch?v={self.playlist_id}'
+            scrap_url = f'https://www.youtube.com/playlist?list={self.playlist_id}'
         elif url_type == 'url':
             scrap_url = scrap_url
             # Expresión regular para extraer el valor del parámetro 'v'
@@ -222,8 +226,7 @@ class YoutubePlaylist:
 
             # Crear el diccionario para los datos
             playlist_data = {
-                'playlist_id': self.playlisto_id,  # Tiene que estar siempre este campo
-                'channel_id': self._fetch_channel_id(),
+                'playlist_id': self.playlist_id,  # Tiene que estar siempre este campo
                 'channel_name': self._fetch_channel_name(),
                 'title': self._fetch_playlist_title(),
                 'views': self._fetch_playlist_views(),
@@ -232,6 +235,8 @@ class YoutubePlaylist:
                 'n_videos': self._fetch_n_videos(),
                 'video_ids': self._fetch_video_ids(),
             }
+            
+            playlist_data['channel_id'] = self._fetch_channel_id(playlist_data['channel_name'])
 
             # Actualiza la información de la playlist con los datos obtenidos del scraping
             self.load_from_dict(playlist_data)
@@ -258,32 +263,278 @@ class YoutubePlaylist:
             logger.error(f"Error inesperado al obtener los datos para el patron {pattern} para el canal {self.channel_id}.")
         return None
     
-    def _fetch_channel_id(self):
-        return None
+    def _fetch_channel_id(self, channel_name=None):
+        """
+        Obtiene el ID del canal basado en el nombre del canal proporcionado.
+        
+        Parameters:
+            channel_name (str): El nombre del canal para buscar su ID.
+            
+        Returns:
+            str: El ID del canal. Si no se encuentra, devuelve el ID predeterminado.
+        """
+        # ID del canal predeterminado
+        channel_id = self.DEFAULT_VALUES['channel_id']
+        
+        # Si no se proporciona un nombre de canal, devuelve el ID predeterminado
+        if not channel_name:
+            return channel_id
+        
+        # Aca falta algo para buscar el ID por otro lado
+        # Si no se encuentra en la base de datos, podrías agregar una búsqueda adicional aquí
+        
+        # Obtengo el ID desde la base de datos
+        with Database() as db:
+            try:
+                results = db.select(
+                    'SELECT DISTINCT CHANNEL_ID FROM CHANNEL WHERE CHANNEL_NAME = "{}"'.format(channel_name),
+                    ())
+                
+                # Si se encuentran resultados, actualiza el ID del canal
+                if results:
+                    channel_id = results[0][0]
+            except Exception as e:
+                logger.error(f'Error al obtener el ID del canal para el nombre [{channel_name}]. Error: {e}')
+        
+        # Devuelve el ID del canal (puede ser el predeterminado si no se encuentra)
+        return channel_id
     
-    def _fetch_channel_name(self):
-        return None
+    def _fetch_channel_name(self, pattern=None):
+        """Obtiene el nombre del canal de Youtube para la playlist a partir del contenido HTML.
+
+        Args:
+            pattern (str, opcional): Patrón de búsqueda para extraer el nombre del canal la playlist.
+
+        Returns:
+            str: Nombre del canal de Youtube.
+
+        Notas:
+            - Este método tiene un algoritmo principal y uno alternativo.
+        """
+        try:
+            # Si no se proporciona un patrón, se utiliza uno predeterminado
+            pattern = r'"ownerChannelName":"(.*?)"' if pattern is None else pattern
+
+            # Intenta obtener el nombre del canal la playlist utilizando el patrón dado en el HTML
+            channel_name = self._fetch_data_from_pattern(pattern, self.html_content)
+
+            # Si se encuentra el nombre del canal la playlist, devolverlo
+            if channel_name:
+                return channel_name
+
+            # Construir una URL alternativa para hacer scraping si el método principal falla
+            url = f'https://www.youtube.com/oembed?url=http://www.youtube.com/playlist?list={self.playlist_id}&format=json'
+            # Obtener la respuesta HTTP
+            response = requests.get(url)
+            # Transformar a datos JSON
+            data = json.loads(response.text)
+            # Obtener el título de la playlist
+            channel_name = data['author_name']
+            
+            return channel_name
+
+        except Exception as e:
+            # Registra un mensaje de error si no se puede obtener el nombre del canal la playlist
+            logger.error(f"No se pudo obtener el nombre del canal para la playlist [{self.playlist_id}]. Error: {str(e)}")
+
+        # Establece un valor predeterminado de None si no se puede obtener el nombre del canal la playlist
+        return self.DEFAULT_VALUES['channel_name']
     
-    def _fetch_playlist_title(self):
-        return None
+    def _fetch_playlist_title(self, pattern=None):
+        """ 
+        Obtiene el título de la playlist utilizando un patrón sobre el contenido HTML cargado.
+        Registra un error si no se puede obtener el título de la playlist.
+
+        Args:
+            pattern (opcional): Patrón de búsqueda para extraer el título de la playlist.
+
+        Notas:
+            - Este método tiene un algoritmo principal y uno alternativo.
+            - El título de la playlist se establece como 'Unknown' si todo falla.
+        """
+        title = self.DEFAULT_VALUES['title']
+        
+        try:
+            # Si se proporciona un patrón personalizado, úsalo, si no, usa uno predeterminado
+            pattern = r'"title":"(.*?)"' if pattern is None else pattern
+
+            # Obtener la información requerida utilizando el método clásico
+            title = self._fetch_data_from_pattern(pattern, self.html_content)
+
+            # Si se obtiene el título, devolverlo
+            if title:
+                return title
+
+            # Construir una URL alternativa para hacer scraping si el método principal falla
+            url = f'https://www.youtube.com/oembed?url=http://www.youtube.com/playlist?list={self.playlist_id}&format=json'
+            # Obtener la respuesta HTTP
+            response = requests.get(url)
+            # Transformar a datos JSON
+            data = json.loads(response.text)
+            # Obtener el título de la playlist
+            title = data['title']
+
+            return title
+
+        except re.error as e:
+            logger.error(f"Fallo al aplicar el patrón de búsqueda {pattern} para el video [{self.playlist_id}].")
+        except AttributeError as e:
+            logger.error(f"Error de atributo {e} al obtener los datos para el patron {pattern} para el video [{self.playlist_id}].")
+        except Exception as e:
+            logger.error(f"Error inesperado al obtener el título para el video [{self.playlist_id}]: {str(e)}")
     
     def _fetch_playlist_views(self):
-        return None
+        """ 
+        """
+        views = self.DEFAULT_VALUES['views']
+        
+        try:
+            # Obtengo la lista de videos presentes para la playlist en la base de datos
+            with Database() as db:
+                video_views = db.select(
+                    '''
+                    SELECT MAX(VR.VIEWS)
+                    FROM VIDEO_RECORDS VR, PLAYLIST_VIDEO PV
+                    WHERE VR.VIDEO_ID = PV.VIDEO_ID
+                    AND PV.PLAYLIST_ID = "{}"
+                    '''.format(self.playlist_id),
+                    ())
+                video_views = [x[0] for x in video_views]
+                
+                if video_views:
+                    return sum(video_views)
+                    
+        # Gestion de errores
+        except Exception as e:
+            logger.error(f"No se pudo obtener la fecha de publicación para el video {self.playlist_id}: {str(e)}")
+        
+        return views
     
-    def _fetch_most_viewed_moment(self):
-        return None
-    
-    def _fetch_publish_date(self):
-        return None
+    def _fetch_publish_date(self, pattern_1=None, pattern_2=None):
+        """ 
+        Obtiene la fecha de publicación de la playlist utilizando un patrón sobre el contenido HTML cargado.
+        Registra un error si no se puede obtener la fecha de publicación de la playlist.
+
+        Args:
+            pattern_1 (opcional): Patrón de búsqueda 1 para extraer la fecha de publicación de la playlist.
+            pattern_2 (opcional): Patrón de búsqueda 2 para extraer la fecha de publicación de la playlist.
+
+        Notas:
+            - Este método tiene un algoritmo principal y uno alternativo.
+            - La fecha de publicación de la playlist se establece en '00/00/00' si todo falla.
+        """
+        publish_date = self.DEFAULT_VALUES['publish_date']
+        
+        try:
+            # # Si se proporciona un patrón personalizado, úsalo, si no, usa uno predeterminado
+            # pattern_1 = r'"uploadDate":"(.*?)"' if pattern_1 is None else pattern_1
+            # pattern_2 = r'"publishDate":"(.*?)"' if pattern_2 is None else pattern_2
+
+            # # Intentar obtener la fecha de publicación utilizando el primer patrón
+            # publish_date = self._fetch_data_from_pattern(pattern_1, self.html_content)
+            
+            # # Si obtengo un resultado valido termino la ejecucion
+            # if publish_date:
+            #     # Convertir la cadena a un objeto datetime
+            #     fecha_objeto = datetime.fromisoformat(publish_date)
+            #     # Formatear la fecha en el nuevo formato
+            #     publish_date = fecha_objeto.strftime("%Y-%m-%d %H:%M:%S")
+            #     return publish_date
+
+            # # Intentar obtener la fecha de publicación utilizando el segundo patrón si falla el primero
+            # publish_date = self._fetch_data_from_pattern(pattern_2, self.html_content)
+            
+            # # Si obtengo un resultado valido termino la ejecucion
+            # if publish_date:
+            #     # Convertir la cadena a un objeto datetime
+            #     fecha_objeto = datetime.fromisoformat(publish_date)
+            #     # Formatear la fecha en el nuevo formato
+            #     publish_date = fecha_objeto.strftime("%Y-%m-%d %H:%M:%S")
+            #     return publish_date
+            
+            # Obtengo la fecha de puclicacion desde la base de datos
+            with Database() as db:
+                try:
+                    results = db.select(
+                        'SELECT PUBLISH_DATE FROM PLAYLIST WHERE PLAYLIST_ID = "{}" ORDER BY UPDATE_DATE DESC'.format(self.playlist_id),
+                        ())
+                    
+                    # Si se encuentran resultados, actualiza el ID del canal
+                    if results:
+                        publish_date = results[0][0]
+                except Exception as e:
+                    logger.error(f'Error al obtener la fecha de publicacion de la playlist [{self.playlist_id}]. Error: {e}')
+                    
+        # Gestion de errores
+        except ValueError as e:
+            logger.error(f"Fallo al intentar formatear la fecha de publicación para el video {self.video_id}. Error: {e}")
+        except re.error as e:
+            logger.error(f"Fallo al aplicar los patrones de búsqueda {pattern_1}, {pattern_2} para obtener la fecha de publicacion para el video {self.video_id}.")
+        except Exception as e:
+            logger.error(f"No se pudo obtener la fecha de publicación para el video {self.id}: {str(e)}")
+
+        return publish_date
     
     def _fetch_playlist_likes(self):
-        return None
+        """ 
+        """
+        likes = self.DEFAULT_VALUES['likes']
+        
+        try:
+            # Obtengo la lista de videos presentes para la playlist en la base de datos
+            with Database() as db:
+                video_likes = db.select(
+                    '''
+                    SELECT MAX(VR.LIKES)
+                    FROM VIDEO_RECORDS VR, PLAYLIST_VIDEO PV
+                    WHERE VR.VIDEO_ID = PV.VIDEO_ID
+                    AND PV.PLAYLIST_ID = "{}"
+                    '''.format(self.playlist_id),
+                    ())
+                video_likes = [x[0] for x in video_likes]
+                
+                if video_likes:
+                    return sum(video_likes)
+                    
+        # Gestion de errores
+        except Exception as e:
+            logger.error(f"No se pudo obtener la fecha de publicación para el video {self.playlist_id}: {str(e)}")
+
+        return likes
     
     def _fetch_n_videos(self):
-        return None
+        """
+        Obtiene el numero de videos de la playlist basado en registros anteriores.
+        
+        Parameters:
+            channel_name (str): El nombre del canal para buscar su ID.
+            
+        Returns:
+            str: El ID del canal. Si no se encuentra, devuelve el ID predeterminado.
+        """
+        # ID del canal predeterminado
+        n_videos = self.DEFAULT_VALUES['n_videos']
+        
+        # Aca falta algo para buscar el ID por otro lado
+        # Si no se encuentra en la base de datos, podrías agregar una búsqueda adicional aquí
+        
+        # Obtengo el ID desde la base de datos
+        with Database() as db:
+            try:
+                results = db.select(
+                    'SELECT VIDEOS_COUNT FROM PLAYLIST_RECORDS WHERE PLAYLIST_ID = "{}" ORDER BY UPDATE_DATE DESC'.format(self.playlist_id),
+                    ())
+                
+                # Si se encuentran resultados, actualiza el ID del canal
+                if results:
+                    n_videos = results[0][0]
+            except Exception as e:
+                logger.error(f'Error al obtener la cantidad de videos de la playlist [{self.playlist_id}]. Error: {e}')
+                
+        return n_videos
     
     def _fetch_video_ids(self):
-        return None
+        return self.DEFAULT_VALUES['video_ids']
     
     ############################################################################
     # Obtención de datos mediante la API de YouTube
@@ -309,6 +560,9 @@ class YoutubePlaylist:
                     
                     # Actualizo la información de la playlist
                     self.load_from_dict(playlist_data)
+                    
+                    playlist_data['views'] = self._fetch_playlist_views()
+                    playlist_data['likes'] = self._fetch_playlist_likes()
                     
                     if self.DEBUG:
                         logger.info("Los datos se cargaron exitosamente utilizando la API de YouTube.")
@@ -349,20 +603,20 @@ class YoutubePlaylist:
         """
         # Verifica si los datos ya están cargados
         if self.data_loaded:
-            logger.info(f"Los datos de la playlist {self.playlist_id} ya están cargados en el objeto YoutubePlaylist.")
+            logger.info(f"Los datos de la playlist [{self.playlist_id}] ya están cargados en el objeto YoutubePlaylist.")
             self.fetch_status = True
             return
 
         # Intenta cargar datos del diccionario proporcionado durante la inicialización
         if info_dict:
             self.load_from_dict(info_dict)
-            logger.info(f"Los datos de la playlist {self.playlist_id} se cargaron exitosamente desde el diccionario proporcionado durante la inicialización.")
+            logger.info(f"Los datos de la playlist [{self.playlist_id}] se cargaron exitosamente desde el diccionario proporcionado durante la inicialización.")
             self.fetch_status = True
             return
 
         # Verifica si se especificó un método forzado
         if force_method:
-            logger.info(f"Los datos de la playlist {self.playlist_id} se van a cargar forzadamente usando el método {force_method}.")
+            logger.info(f"Los datos de la playlist [{self.playlist_id}] se van a cargar forzadamente usando el método [{force_method}].")
             
             if force_method.lower() == 'api':
                 if self._load_data_from_api():
@@ -377,7 +631,7 @@ class YoutubePlaylist:
                 self.fetch_status = False
                 return
             
-            logger.error(f"No se pudo cargar datos de la playlist {self.playlist_id} de YouTube usando métodos forzados.")
+            logger.error(f"No se pudo cargar datos de la playlist [{self.playlist_id}] de YouTube usando métodos forzados.")
             self.fetch_status = False
             return
 
@@ -401,21 +655,21 @@ if __name__ == "__main__":
     set_environment('settings.json')
     
     # Crear una instancia de YoutubePlaylist
-    playlist = YoutubePlaylist(playlist_id='PLBRoHO-L7e4Iw_JjEw2IlpE_FeR-wzgPS')
+    playlist = YoutubePlaylist(playlist_id='PL5_hxvIU4KD0cv1o3VX70E-ySh6lMxOj5')
 
     # Simular que los datos ya están cargados
     # Si está en True se acaba la ejecución del programa
     playlist.data_loaded = False
 
     # Llamar al método fetch_data
-    playlist.fetch_data(force_method='api')
+    playlist.fetch_data(force_method='html')
 
     # Verificar si se cargaron los datos con éxito
     if playlist.fetch_status:
-        print("Los datos se cargaron con éxito.")
-        print(str(playlist))
+        logger.info("Los datos se cargaron con éxito.")
+        logger.info(str(playlist))
     else:
-        print("Error al cargar los datos.")
+        logger.info("Error al cargar los datos.")
     
     # Guardo el playlist en la base da datos
     from src.database.db import Database

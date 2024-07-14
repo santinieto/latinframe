@@ -239,3 +239,74 @@ def sql_clean_db_post_export():
         filename_1 = FILENAME_5,
         filename_2 = FILENAME_6
     )
+
+def delete_unrelated():
+    """
+    """
+    # FIXME: Terminar esto
+    
+    commands = ['SELECT *',
+                #'DELETE'
+                ]
+    
+    queries = [
+        "FROM TOPICS WHERE LOWER(TOPIC) IN (SELECT LOWER(CHANNEL_NAME) FROM CHANNEL WHERE CHANNEL_ID = '{}')",
+        "FROM PLAYLIST_VIDEO WHERE PLAYLIST_ID IN (SELECT DISTINCT PLAYLIST_ID FROM PLAYLIST WHERE CHANNEL_ID = '{}')",
+        "FROM PLAYLIST_RECORDS WHERE PLAYLIST_ID IN (SELECT DISTINCT PLAYLIST_ID FROM PLAYLIST WHERE CHANNEL_ID = '{}')",
+        "FROM PLAYLIST WHERE CHANNEL_ID = '{}'",
+        "FROM SHORT_RECORDS WHERE SHORT_ID IN (SELECT DISTINCT SHORT_ID FROM SHORT WHERE CHANNEL_ID = '{}')",
+        "FROM SHORT WHERE CHANNEL_ID = '{}'",
+        "FROM VIDEO_RECORDS WHERE VIDEO_ID IN (SELECT DISTINCT VIDEO_ID FROM VIDEO WHERE CHANNEL_ID = '{}')",
+        "FROM VIDEO WHERE CHANNEL_ID = '{}'",
+        "FROM CHANNEL_RECORDS WHERE CHANNEL_ID = '{}'",
+        "FROM CHANNEL WHERE CHANNEL_ID = '{}'"
+    ]
+    
+
+def delete_channel_from_db(channel_id=None):
+    """
+    Borra todos los registros en la base de datos relacionados con el ID de canal proporcionado.
+    
+    Parametros:
+        channel_id (str): ID del canal a borrar.
+    """
+    if not channel_id:
+        logger.error('No se proporcionó un canal para borrar.')
+        return
+    
+    commands = ['SELECT *', 'DELETE']
+    
+    queries = [
+        "FROM TOPICS WHERE LOWER(TOPIC) IN (SELECT LOWER(CHANNEL_NAME) FROM CHANNEL WHERE CHANNEL_ID = '{}')",
+        "FROM PLAYLIST_VIDEO WHERE PLAYLIST_ID IN (SELECT DISTINCT PLAYLIST_ID FROM PLAYLIST WHERE CHANNEL_ID = '{}')",
+        "FROM PLAYLIST_RECORDS WHERE PLAYLIST_ID IN (SELECT DISTINCT PLAYLIST_ID FROM PLAYLIST WHERE CHANNEL_ID = '{}')",
+        "FROM PLAYLIST WHERE CHANNEL_ID = '{}'",
+        "FROM SHORT_RECORDS WHERE SHORT_ID IN (SELECT DISTINCT SHORT_ID FROM SHORT WHERE CHANNEL_ID = '{}')",
+        "FROM SHORT WHERE CHANNEL_ID = '{}'",
+        "FROM VIDEO_RECORDS WHERE VIDEO_ID IN (SELECT DISTINCT VIDEO_ID FROM VIDEO WHERE CHANNEL_ID = '{}')",
+        "FROM VIDEO WHERE CHANNEL_ID = '{}'",
+        "FROM CHANNEL_RECORDS WHERE CHANNEL_ID = '{}'",
+        "FROM CHANNEL WHERE CHANNEL_ID = '{}'"
+    ]
+    
+    with Database() as db:
+        for command in commands:
+            for query_template in queries:
+                query = "{} {}".format(command, query_template.format(channel_id))
+                
+                try:
+                    results = db.select(query, ())
+                    
+                    if command == 'SELECT *':
+                        logger.info(f'Se van a borrar {len(results)} registros desde la tabla {query_template.split(" ")[1]} para el canal [{channel_id}]')
+                    
+                    if command == 'DELETE':
+                        db.conn.commit()
+                except Exception as e:
+                    logger.error(f'Error ejecutando el comando {command} para el canal [{channel_id}]: {e}')
+                    if command == 'DELETE':
+                        db.conn.rollback()
+                    return
+    
+        if command == 'DELETE':
+            logger.info(f'Registros borrados para el canal [{channel_id}]')

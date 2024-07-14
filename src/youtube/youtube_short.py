@@ -722,7 +722,7 @@ class YoutubeShort:
                     logger.debug(f"Se intentó usar la API de YouTube para obtener los datos del short {self.short_id} pero la API está deshabilitada.")
         
         except Exception as e:
-            logger.warning(f"Fallo al cargar datos utilizando la API de YouTube: {e}")
+            logger.warning(f"Fallo al cargar datos utilizando la API de YouTube: [{e}]")
 
         return False
 

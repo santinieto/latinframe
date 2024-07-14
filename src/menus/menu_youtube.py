@@ -11,6 +11,7 @@ import os
 from functools import partial
 
 # Imports locales
+from src.database.db_fetch import delete_channel_from_db
 from src.youtube.youtube_manager import YoutubeManager
 from src.youtube.youtube_manager import initialize_youtube_channel
 from src.youtube.youtube_manager import initialize_youtube_video
@@ -86,7 +87,7 @@ def menu_channel(app):
             app.add_option("Buscar canal en internet", lambda: fetch_channel_data_from_internet(app))
             app.add_option("Buscar canal en la BD", lambda: print('Proximament disponible!'))
             app.add_option("Agregar canal a la BD", lambda: print('Proximament disponible!'))
-            app.add_option("Borrar canal de la BD", lambda: print('Proximament disponible!'))
+            app.add_option("Borrar canal de la BD", lambda: delete_channel_data_from_internet(app))
             app.add_option("Ver datos de canal", lambda: print('Proximament disponible!'))
             app.add_option("Volver", lambda: menu_youtube(app))
     except AttributeError as e:
@@ -153,6 +154,25 @@ def fetch_channel_data_from_internet(app):
         app.add_option("Volver", lambda: menu_youtube(app))
     except Exception as e:
         logger.error(f'Error al obtener datos del canal desde Internet. Error: {e}')
+    
+def delete_channel_data_from_internet(app):
+    """
+    Obtiene datos de un canal de YouTube desde Internet.
+    """
+    try:
+        partial_delete_channel_from_db = partial(delete_channel_from_db)
+            
+        app.screen()  # Limpia la pantalla
+        app.add_label("Ingrese el ID o URL del canal:")
+        app.add_user_input(
+                placeholder="UC_x5XG1OV2P6uZZ5FSM9Ttw",
+                submit_command=partial_delete_channel_from_db,
+                btn_text='Borrar datos'
+            )
+        app.add_option("Volver", lambda: menu_youtube(app))
+    except Exception as e:
+        logger.error(f'Error al borrar datos del canal desde la base de datos. Error: {e}')
+
 
 def fetch_playlist_data_from_internet(app):
     """
