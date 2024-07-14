@@ -31,7 +31,7 @@ class YoutubeShort:
     # Metodos de incializacion
     ############################################################################
     # Valores por defecto para los atributos de la clase
-    DEBUG = True
+    DEBUG = False
     DEFAULT_SAVE_HTML = True
     DEFAULT_VALUES = {
         'short_id': 'Unknown Short ID',

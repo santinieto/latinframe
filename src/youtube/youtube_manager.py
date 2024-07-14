@@ -211,6 +211,8 @@ class YoutubeManager:
             self.channel_ids = channel_ids
             self.channels = []
             self.videos = []
+            self.shorts = []
+            self.playlists = []
             self.enable_mp = getenv('ENABLE_MP', self.DEFAULT_ENABLE_MP)
             self.db_name = getenv('DB_NAME', self.DEFAULT_DB_NAME)
             self.n_cores = self.set_n_cores()
@@ -299,7 +301,7 @@ class YoutubeManager:
     ############################################################################
     # Gestion de canales de Youtube
     ############################################################################
-    def fetch_data(self, initialize_channels=True, initialize_videos=True, insert_data_to_db=True):
+    def fetch_data(self, initialize_channels=True, initialize_videos=True, initialize_shorts=True, initialize_playlists=True, insert_data_to_db=True):
         """
         Ejecuta el proceso de scrap según las opciones proporcionadas.
         """
@@ -318,6 +320,18 @@ class YoutubeManager:
         
                 if self.DEBUG:
                     self.log_videos_info()
+    
+            if initialize_shorts:
+                self.initialize_shorts()
+        
+                if self.DEBUG:
+                    self.log_shorts_info()
+    
+            if initialize_playlists:
+                self.initialize_playlists()
+        
+                if self.DEBUG:
+                    self.log_playlists_info()
         
         if insert_data_to_db:
             self.insert_data_to_db()
@@ -376,8 +390,8 @@ class YoutubeManager:
         """
         Inicializa los videos de YouTube.
 
-        Utiliza multiprocessing para inicializar los canales en paralelo si ENABLE_MP es True,
-        de lo contrario, inicializa los canales de forma serial.
+        Utiliza multiprocessing para inicializar los videos en paralelo si ENABLE_MP es True,
+        de lo contrario, inicializa los videos de forma serial.
         """
         for channel in self.channels:
             # Obtengo la lista de IDs para el canal actual
@@ -424,6 +438,118 @@ class YoutubeManager:
         for channel in self.channels:
             for video in channel.videos:
                 logger.info(str(video))
+    
+    ############################################################################
+    # Gestion de shorts de Youtube
+    ############################################################################
+    def initialize_shorts(self):
+        """
+        Inicializa los shorts de YouTube.
+
+        Utiliza multiprocessing para inicializar los shorts en paralelo si ENABLE_MP es True,
+        de lo contrario, inicializa los shorts de forma serial.
+        """
+        for channel in self.channels:
+            # Obtengo la lista de IDs para el short actual
+            short_id_list = channel.short_id_list
+            
+            if self.enable_mp:
+                logger.info('Inicializando shorts de Youtube en paralelo')
+                self.parallel_short_initialize(short_id_list)
+            else:
+                logger.info('Inicializando shorts de Youtube en serie')
+                self.serial_short_initialize(short_id_list)
+            
+            # Cuando termino le asigno los objetos de tipo short
+            # al objeto de tipo short
+            channel.shorts = self.shorts
+
+    def parallel_short_initialize(self, short_id_list):
+        """
+        Inicializa los shorts de YouTube en paralelo utilizando multiprocessing.Pool.
+        """
+        self.shorts = []
+        try:
+            init_func = partial(initialize_youtube_short, verbose=False)
+            self.shorts = self.pool.map(init_func, short_id_list)
+        except Exception as e:
+            logger.error(f'Error al inicializar los shorts en paralelo: {str(e)}')
+        
+    def serial_short_initialize(self, short_id_list):
+        """
+        Inicializa los shorts de YouTube de forma serial.
+        """
+        self.shorts = []
+        try:
+            for short_id in short_id_list:
+                short = initialize_youtube_short(short_id, verbose=False)
+                self.shorts.append(short)
+        except Exception as e:
+            logger.error(f'Error al inicializar los shorts en serie: {str(e)}')
+            
+    def log_shorts_info(self):
+        """
+        Registra la información de todos los shorts en el logger.
+        """
+        for channel in self.channels:
+            for short in channel.shorts:
+                logger.info(str(short))
+    
+    ############################################################################
+    # Gestion de playlists de Youtube
+    ############################################################################
+    def initialize_playlists(self):
+        """
+        Inicializa las playlists de YouTube.
+
+        Utiliza multiprocessing para inicializar las playlists en paralelo si ENABLE_MP es True,
+        de lo contrario, inicializa las playlists de forma serial.
+        """
+        for channel in self.channels:
+            # Obtengo la lista de IDs para el playlist actual
+            playlist_id_list = channel.playlist_id_list
+            
+            if self.enable_mp:
+                logger.info('Inicializando playlists de Youtube en paralelo')
+                self.parallel_playlist_initialize(playlist_id_list)
+            else:
+                logger.info('Inicializando playlists de Youtube en serie')
+                self.serial_playlist_initialize(playlist_id_list)
+            
+            # Cuando termino le asigno los objetos de tipo playlist
+            # al objeto de tipo playlist
+            channel.playlists = self.playlists
+
+    def parallel_playlist_initialize(self, playlist_id_list):
+        """
+        Inicializa las playlists de YouTube en paralelo utilizando multiprocessing.Pool.
+        """
+        self.playlists = []
+        try:
+            init_func = partial(initialize_youtube_playlist, verbose=False)
+            self.playlists = self.pool.map(init_func, playlist_id_list)
+        except Exception as e:
+            logger.error(f'Error al inicializar las playlists en paralelo: {str(e)}')
+        
+    def serial_playlist_initialize(self, playlist_id_list):
+        """
+        Inicializa las playlists de YouTube de forma serial.
+        """
+        self.playlists = []
+        try:
+            for playlist_id in playlist_id_list:
+                playlist = initialize_youtube_playlist(playlist_id, verbose=False)
+                self.playlists.append(playlist)
+        except Exception as e:
+            logger.error(f'Error al inicializar las playlists en serie: {str(e)}')
+            
+    def log_playlists_info(self):
+        """
+        Registra la información de todos los playlists en el logger.
+        """
+        for channel in self.channels:
+            for playlist in channel.playlists:
+                logger.info(str(playlist))
                 
     ############################################################################
     # Interacciones con la base de datos
@@ -485,17 +611,37 @@ class YoutubeManager:
                 if channel.fetch_status:
                     self.insert_channel_data_to_db(channel)
         except Exception as e:
-            logger.error(f"Error al insertar datos para los canales de Youtube en la base de datos: {str(e)}")
+            logger.error(f"Error al insertar datos para los canales de Youtube en la base de datos. Error: {str(e)}")
             
         try:
-            # Inserto los datos de los canales que resultaron exitosos
+            # Inserto los datos de los videos que resultaron exitosos
             for channel in self.channels:
                 if channel.fetch_status:
                     for video in channel.videos:
                         if video.fetch_status:
                             self.insert_video_data_to_db(video)
         except Exception as e:
-            logger.error(f"Error al insertar datos para los videos de Youtube en la base de datos: {str(e)}")
+            logger.error(f"Error al insertar datos para los videos de Youtube en la base de datos. Error: {str(e)}")
+            
+        try:
+            # Inserto los datos de los shorts que resultaron exitosos
+            for channel in self.channels:
+                if channel.fetch_status:
+                    for short in channel.shorts:
+                        if short.fetch_status:
+                            self.insert_short_data_to_db(short)
+        except Exception as e:
+            logger.error(f"Error al insertar datos para los shorts de Youtube en la base de datos. Error: {str(e)}")
+            
+        try:
+            # Inserto los datos de los shorts que resultaron exitosos
+            for channel in self.channels:
+                if channel.fetch_status:
+                    for playlist in channel.playlists:
+                        if playlist.fetch_status:
+                            self.insert_playlist_data_to_db(playlist)
+        except Exception as e:
+            logger.error(f"Error al insertar datos para las playlists de Youtube en la base de datos. Error: {str(e)}")
     
     def insert_channel_data_to_db(self, channel):
         """
@@ -520,18 +666,54 @@ class YoutubeManager:
         Inserta los datos de un video de YouTube en la base de datos.
 
         Args:
-            channel (YoutubeVideo): El objeto de video de YouTube del cual se insertarán los datos en la base de datos.
+            video (YoutubeVideo): El objeto de video de YouTube del cual se insertarán los datos en la base de datos.
         """
         # Obtener el diccionario de los datos del video
         video_data = video.to_dict()
 
-        # Llamar al método insert_channel_record() de la base de datos y pasar el diccionario como argumento
+        # Llamar al método insert_video_record() de la base de datos y pasar el diccionario como argumento
         try:
             self.database.insert_video_record(video_data)
             if self.DEBUG:
-                logger.info(f"Datos del canal '{video.channel_id}' insertados en la base de datos.")
+                logger.info(f"Datos del video '{video.video_id}' insertados en la base de datos.")
         except Exception as e:
-            logger.error(f"Error al insertar datos del canal '{video.channel_id}' en la base de datos: {str(e)}")
+            logger.error(f"Error al insertar datos del video '{video.video_id}' en la base de datos: {str(e)}")
+    
+    def insert_short_data_to_db(self, short):
+        """
+        Inserta los datos de un short de YouTube en la base de datos.
+
+        Args:
+            short (YoutubeShort): El objeto de short de YouTube del cual se insertarán los datos en la base de datos.
+        """
+        # Obtener el diccionario de los datos del short
+        short_data = short.to_dict()
+
+        # Llamar al método insert_short_record() de la base de datos y pasar el diccionario como argumento
+        try:
+            self.database.insert_short_record(short_data)
+            if self.DEBUG:
+                logger.info(f"Datos del short '{short.short_id}' insertados en la base de datos.")
+        except Exception as e:
+            logger.error(f"Error al insertar datos del canal '{short.short_id}' en la base de datos: {str(e)}")
+    
+    def insert_playlist_data_to_db(self, playlist):
+        """
+        Inserta los datos de una playlist de YouTube en la base de datos.
+
+        Args:
+            playlist (YoutubePlaylist): El objeto de playlist de YouTube del cual se insertarán los datos en la base de datos.
+        """
+        # Obtener el diccionario de los datos del playlist
+        playlist_data = playlist.to_dict()
+
+        # Llamar al método insert_playlist_record() de la base de datos y pasar el diccionario como argumento
+        try:
+            self.database.insert_playlist_record(playlist_data)
+            if self.DEBUG:
+                logger.info(f"Datos del playlist '{playlist.playlist_id}' insertados en la base de datos.")
+        except Exception as e:
+            logger.error(f"Error al insertar datos del canal '{playlist.playlist_id}' en la base de datos: {str(e)}")
     
 if __name__ == "__main__":
     import argparse

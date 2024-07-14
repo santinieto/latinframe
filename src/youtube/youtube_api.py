@@ -611,9 +611,6 @@ class YoutubeAPI:
         except Exception as e:
             logger.error(f'Se produjo un error al obtener la información para la playlist {playlist_id}. Error: {e}')
         
-        # Placeholder para el tiempo medio de visualización de la playlist (actualmente no implementado)
-        data['mvm'] = '00:00:00'
-        
         return data
 
 if __name__ == '__main__':

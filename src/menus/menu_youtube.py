@@ -62,11 +62,15 @@ def fetch_all_youtube_data():
         youtube_manager.fetch_data(
             initialize_channels=True,
             initialize_videos=True,
+            initialize_shorts=True,
+            initialize_playlists=True,
             insert_data_to_db=True
         )
         
         youtube_manager.log_channels_info()
         youtube_manager.log_videos_info()
+        youtube_manager.log_shorts_info()
+        youtube_manager.log_playlists_info()
         
         logger.info('Proceso finalizado')
         

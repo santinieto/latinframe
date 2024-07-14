@@ -49,7 +49,9 @@ class YoutubeChannel:
         'videos': [], # Aca se guardan los objetos de tipo YoutubeVideo
         'subchannels': [],
         'playlist_id_list': [],
-        'short_id_list': []
+        'playlists': [], # Aca se guardan los objetos de tipo YoutubePlaylist
+        'short_id_list': [],
+        'shorts': [], # Aca se guardan los objetos de tipo YoutubeShort
     }
 
     def __init__(self, channel_id=None, info_dict=None):

@@ -25,7 +25,7 @@ class YoutubePlaylist:
     # Metodos de incializacion
     ############################################################################
     # Valores por defecto para los atributos de la clase
-    DEBUG = True
+    DEBUG = False
     DEFAULT_SAVE_HTML = True
     DEFAULT_VALUES = {
         'playlist_id': 'Unknown Playlist ID',
