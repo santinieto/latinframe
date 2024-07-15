@@ -240,28 +240,53 @@ def sql_clean_db_post_export():
         filename_2 = FILENAME_6
     )
 
-def delete_unrelated():
+def delete_related_news(channel_id=None, topic_ids = None):
     """
+    Borra todos los registros en la tabla NEWS relacionados con el ID de canal proporcionado.
+    
+    Parametros:
+        channel_id (str): ID del canal a borrar.
     """
-    # FIXME: Terminar esto
     
-    commands = ['SELECT *',
-                #'DELETE'
-                ]
-    
-    queries = [
-        "FROM TOPICS WHERE LOWER(TOPIC) IN (SELECT LOWER(CHANNEL_NAME) FROM CHANNEL WHERE CHANNEL_ID = '{}')",
-        "FROM PLAYLIST_VIDEO WHERE PLAYLIST_ID IN (SELECT DISTINCT PLAYLIST_ID FROM PLAYLIST WHERE CHANNEL_ID = '{}')",
-        "FROM PLAYLIST_RECORDS WHERE PLAYLIST_ID IN (SELECT DISTINCT PLAYLIST_ID FROM PLAYLIST WHERE CHANNEL_ID = '{}')",
-        "FROM PLAYLIST WHERE CHANNEL_ID = '{}'",
-        "FROM SHORT_RECORDS WHERE SHORT_ID IN (SELECT DISTINCT SHORT_ID FROM SHORT WHERE CHANNEL_ID = '{}')",
-        "FROM SHORT WHERE CHANNEL_ID = '{}'",
-        "FROM VIDEO_RECORDS WHERE VIDEO_ID IN (SELECT DISTINCT VIDEO_ID FROM VIDEO WHERE CHANNEL_ID = '{}')",
-        "FROM VIDEO WHERE CHANNEL_ID = '{}'",
-        "FROM CHANNEL_RECORDS WHERE CHANNEL_ID = '{}'",
-        "FROM CHANNEL WHERE CHANNEL_ID = '{}'"
-    ]
-    
+    # Obtengo las tematicas que no estan en presentes en la tabla de canales
+    with Database() as db:
+        if not topic_ids:
+            if not isinstance(topic_ids, list):
+                topic_ids = [topic_ids]
+            
+            query = """
+            SELECT N.NEW_ID
+            FROM NEWS N, TOPICS T
+            WHERE N.TOPIC_ID = T.TOPIC_ID
+            AND T.TOPIC_ID IN ({})
+            """.format(','.join([str(x) for x in topic_ids]))
+            results = db.select(query, ())
+            new_ids = [x[0] for x in results]
+            
+            # Previo a terminar el if, borro los ID de la tabla topics
+            query = """
+            DELETE FROM TOPICS
+            WHERE TOPIC_ID IN ({})
+            """.format(','.join([str(x) for x in topic_ids]))
+            db.exec(query, ())
+        else:
+            query = """
+            SELECT N.NEW_ID
+            FROM NEWS N, TOPICS T, CHANNEL C
+            WHERE N.TOPIC_ID = T.TOPIC_ID
+            AND LOWER(T.TOPIC) = LOWER(C.CHANNEL_NAME)
+            AND C.CHANNEL_ID = "{}"
+            """.format(channel_id)
+            results = db.select(query, ())
+            new_ids = [x[0] for x in results]
+            
+        new_str = ','.join([str(x) for x in new_ids])
+        
+        query = 'DELETE FROM NEWS WHERE NEW_ID IN ({})'.format(new_str)
+        
+        db.exec(query, ())
+        
+        logger.info(f'Se borraron {len(new_ids)} registros desde la tabla NEWS.')
 
 def delete_channel_from_db(channel_id=None):
     """
@@ -274,9 +299,14 @@ def delete_channel_from_db(channel_id=None):
         logger.error('No se proporcionó un canal para borrar.')
         return
     
+    # Borro las noticias relacionadas al canal
+    delete_related_news(channel_id=channel_id)
+    
+    # Borro la informacion en las demas tablas
     commands = ['SELECT *', 'DELETE']
     
     queries = [
+        "FROM TOPICS WHERE LOWER(TOPIC) IN (SELECT LOWER(CHANNEL_NAME) FROM CHANNEL WHERE CHANNEL_ID = '{}')",
         "FROM TOPICS WHERE LOWER(TOPIC) IN (SELECT LOWER(CHANNEL_NAME) FROM CHANNEL WHERE CHANNEL_ID = '{}')",
         "FROM PLAYLIST_VIDEO WHERE PLAYLIST_ID IN (SELECT DISTINCT PLAYLIST_ID FROM PLAYLIST WHERE CHANNEL_ID = '{}')",
         "FROM PLAYLIST_RECORDS WHERE PLAYLIST_ID IN (SELECT DISTINCT PLAYLIST_ID FROM PLAYLIST WHERE CHANNEL_ID = '{}')",
@@ -310,3 +340,9 @@ def delete_channel_from_db(channel_id=None):
     
         if command == 'DELETE':
             logger.info(f'Registros borrados para el canal [{channel_id}]')
+
+if __name__ == '__main__':
+    # delete_related_news(channel_id='UC_5niPa-d35gg88HaS7RrIw')
+    delete_related_news(topic_ids=[9,53,64,65,78,79,87,91,95,118,124,156,162,165,176,198])
+    
+    pass
