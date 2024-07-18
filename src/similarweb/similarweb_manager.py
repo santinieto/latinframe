@@ -194,12 +194,26 @@ class SimilarWebManager:
             logger.info(f'Dominions pedidos por el usuario: {user_urls}')
             
         # Armo una lista unica
-        url_list = list( set( html_urls + db_urls + user_urls ) )
-        
-        # Limita la lista de IDs de videos al número máximo especificado
+        # Combina las listas, dando prioridad a las URLs de la base de datos y eliminando duplicados
+        url_set = set()
+        url_list = []
+
+        # Añadir URLs de la base de datos primero
+        for url in db_urls:
+            if url not in url_set:
+                url_list.append(url)
+                url_set.add(url)
+
+        # Añadir URLs de html_urls y user_urls sin duplicados
+        for url in html_urls + user_urls:
+            if url not in url_set:
+                url_list.append(url)
+                url_set.add(url)
+
+        # Limita la lista de URLs al número máximo especificado
         if len(url_list) > self.n_webs_fetch:
             url_list = url_list[:self.n_webs_fetch]
-            logger.info(f'CUIDADO: Se recortaron algunos sitios web para scrapear.')
+            logger.info('CUIDADO: Se recortaron algunos sitios web para scrapear.')
         
         # Muestro la lista final de paginas a obtener
         logger.info('Se va a obtener la informacion de [{}] paginas web'.format(len(url_list)))

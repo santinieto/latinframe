@@ -30,6 +30,8 @@ class YoutubeChannel:
     DEBUG = False
     DEFAULT_SAVE_HTML = False
     DEFAULT_N_VIDEOS_FETCH = 10
+    DEFAULT_N_PLAYLISTS_FETCH = 10
+    DEFAULT_N_SHORTS_FETCH = 10
     DEFAULT_FETCH_VIDEOS = True
     DEFAULT_FETCH_PLAYLISTS = True
     DEFAULT_FETCH_SHORTS = True
@@ -67,9 +69,24 @@ class YoutubeChannel:
         self.fetch_channel_playlists = getenv('YOUTUBE_CHANNEL_FETCH_PLAYLISTS', self.DEFAULT_FETCH_PLAYLISTS)
         self.fetch_channel_shorts = getenv('YOUTUBE_CHANNEL_FETCH_SHORTS', self.DEFAULT_FETCH_SHORTS)
         self.n_videos_fetch = getenv('YOUTUBE_CHANNEL_N_VIDEOS_FETCH', self.DEFAULT_N_VIDEOS_FETCH)
+        self.n_playlists_fetch = getenv('YOUTUBE_CHANNEL_N_PLAYLISTS_FETCH', self.DEFAULT_N_PLAYLISTS_FETCH)
+        self.n_shorts_fetch = getenv('YOUTUBE_CHANNEL_N_SHORTS_FETCH', self.DEFAULT_N_SHORTS_FETCH)
         
         # Comprobaciones de seguridad
         self.n_videos_fetch = max(self.n_videos_fetch, 0) # Me aseguro que no sea menor que 0
+        
+        # Lista final de IDs de videos
+        # Ya lo hago en set_default_values() pero no importa
+        self.video_id_list = []
+        
+        # Limpio las listas internas de IDs
+        self.video_ids_list_db = []
+        self.video_ids_list_constructor = []
+        self.video_ids_list_others = []
+        self.video_ids_list_not_in_db = []
+
+        # Prioridad de fuentes de IDs
+        self.priority_order = ['not_in_db', 'database', 'others', 'constructor']
         
         # Si al momento de la creacion del objeto, el usuario
         # le da un ID de canal a la clase, lo uso
@@ -524,6 +541,10 @@ class YoutubeChannel:
             # Elimino duplicatos y conformo la lista final
             playlist_ids = list(set(matches))
             
+            # Limito la cantidad de playlists
+            if len(playlist_ids) > self.n_playlists_fetch:
+                playlist_ids = playlist_ids[:self.n_playlists_fetch]
+            
             # Devuelvo el resultado
             return playlist_ids
         
@@ -555,6 +576,10 @@ class YoutubeChannel:
             
             # Elimino duplicados y conformo la lista final
             shorts_ids = list(set(matches))
+            
+            # Limito la cantidad de shorts
+            if len(shorts_ids) > self.n_shorts_fetch:
+                shorts_ids = shorts_ids[:self.n_shorts_fetch]
             
             # Devuelvo el resultado
             return shorts_ids
@@ -700,12 +725,13 @@ class YoutubeChannel:
         self.fetch_status = False
         return
 
-    def add_video_ids_to_list(self, new_video_ids):
+    def add_video_ids_to_list(self, new_video_ids, source = 'constructor'):
         """
         Añade una lista de IDs de video o un único ID de video a la lista existente, respetando el límite máximo de videos y evitando duplicados.
 
         Args:
         - new_video_ids: Una lista de IDs de video o un único ID de video a añadir.
+        - source: El origen de los IDs (constructor, database, others)
 
         Usage:
         - Para añadir una lista de IDs de video:
@@ -720,28 +746,63 @@ class YoutubeChannel:
             # Si new_video_ids no es una cadena o una lista, emitir un mensaje de advertencia y salir
             logger.warning(f"La entrada [{new_video_ids}] debe ser una cadena de caracteres o una lista. Tipo proporcionado: {type(new_video_ids)}")
             return
+        
+        # Defino el origen de los datos y los agrego a la lista correspondiente
+        if source == 'database':
+            self.video_ids_list_db.extend(new_video_ids)
+        elif source == 'constructor':
+            self.video_ids_list_constructor.extend(new_video_ids)
+        else:
+            self.video_ids_list_others.extend(new_video_ids)
+        
+        # Actualizar la lista de IDs que no están en la base de datos
+        self.video_ids_list_not_in_db = [x for x in new_video_ids if x not in self.video_ids_list_db]
+        
+        # Muestro la lista de canales que no estan en la base de datos
+        if self.DEBUG:
+            logger.info(f'Lista de IDs que no estan en la base de datos para el canal [{self.channel_id}]: {self.video_ids_list_not_in_db}')
 
-        # Calcular cuántos videos se pueden agregar sin superar el límite
-        remaining_slots = self.n_videos_fetch - len(self.video_id_list)
+        # Actualizar la lista final de videos
+        self.update_final_video_list()
+
+    def update_final_video_list(self):
+        """
+        Construye la lista final de videos basada en la prioridad configurada.
+        """
+        all_videos = {
+            'not_in_db': self.video_ids_list_not_in_db,
+            'database': self.video_ids_list_db,
+            'others': self.video_ids_list_others,
+            'constructor': self.video_ids_list_constructor
+        }
+
+        total_video_ids_list = []
+        for source in self.priority_order:
+            total_video_ids_list.extend(all_videos[source])
         
         # Eliminar duplicados y mantener el orden original
-        new_video_ids = list(dict.fromkeys(new_video_ids))
+        total_video_ids_list = list(dict.fromkeys(total_video_ids_list))
+        
+        # Cortar la lista total según el límite configurado
+        self.video_id_list = total_video_ids_list[:self.n_videos_fetch]
+        not_added_ids = total_video_ids_list[self.n_videos_fetch:]
+        
+        # Emitir un mensaje de advertencia con los IDs de video que no se pudieron agregar
+        if self.DEBUG:
+            logger.warning(f"No se pudieron agregar los siguientes IDs de video para el canal [{self.channel_id}] debido a que se alcanzó el límite máximo o ya están en la lista: {not_added_ids}")
 
-        if remaining_slots >= len(new_video_ids):
-            # Si hay suficiente espacio, agregar los nuevos IDs de video a la lista existente
-            for video_id in new_video_ids:
-                if video_id not in self.video_id_list:
-                    self.video_id_list.append(video_id)
+    def set_priority_order(self, priority_order):
+        """
+        Establece un nuevo orden de prioridad para las fuentes de IDs.
+
+        Args:
+        - priority_order: Una lista con el nuevo orden de prioridad. Debe contener 'not_in_db', 'database', 'others' y 'constructor'.
+        """
+        if set(priority_order) == {'not_in_db', 'database', 'others', 'constructor'}:
+            self.priority_order = priority_order
+            self.update_final_video_list()
         else:
-            # Si no hay suficiente espacio, solo agregar los primeros 'remaining_slots' IDs de video
-            for video_id in new_video_ids[:remaining_slots]:
-                if video_id not in self.video_id_list:
-                    self.video_id_list.append(video_id)
-            # Obtener los IDs de video que no se pudieron agregar
-            not_added_ids = [vid for vid in new_video_ids[remaining_slots:] if vid not in self.video_id_list]
-            # Emitir un mensaje de advertencia con los IDs de video que no se pudieron agregar
-            if self.DEBUG:
-                logger.warning(f"No se pudieron agregar los siguientes IDs de video para el canal [{self.channel_id}] debido a que se alcanzó el límite máximo o ya están en la lista: {not_added_ids}")
+            logger.warning(f"El orden de prioridad proporcionado no es válido: {priority_order}")
 
 if __name__ == "__main__":
     # Crear una instancia de YoutubeChannel

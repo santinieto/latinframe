@@ -133,7 +133,7 @@ class YoutubeShort:
         """
         self.html_content = html_content
         if self.DEBUG:
-            logger.info(f"Contenido HTML establecido con éxito para el short {self.short_id}.")
+            logger.info(f"Contenido HTML establecido con éxito para el short [{self.short_id}].")
         
     def fetch_html_content(self, url_type='id', ovr_id=None, scrap_url=None):
         """ 
@@ -146,7 +146,7 @@ class YoutubeShort:
         """
         # Si se proporciona un ID de short para sobrescribir, úsalo
         if ovr_id is not None:
-            logger.warning(f"Se va a cambiar el ID del short {self.short_id} por {ovr_id}")
+            logger.warning(f"Se va a cambiar el ID del short [{self.short_id}] por {ovr_id}")
             self.short_id = ovr_id
             
         # Define una URL por defecto para hacer scraping
@@ -170,7 +170,7 @@ class YoutubeShort:
         self.html_content = get_http_response(scrap_url, response_type='text')
         
         if self.html_content is None:
-            logger.error(f"No se pudo obtener el contenido HTML para el short {self.short_id}.")
+            logger.error(f"No se pudo obtener el contenido HTML para el short [{self.short_id}].")
 
     def save_html_content(self, html_content=None):
         """
@@ -224,7 +224,7 @@ class YoutubeShort:
 
             # Si hubo un fallo al obtener el código HTML del short, logeo un error y salgo de la función
             if self.html_content in [False, None]:
-                logger.error(f"No se dispone de contenido HTML para el short {self.short_id}.")
+                logger.error(f"No se dispone de contenido HTML para el short [{self.short_id}].")
                 return False
 
             if self.save_html:
@@ -295,7 +295,7 @@ class YoutubeShort:
 
         except Exception as e:
             # Registra un mensaje de error si no se puede obtener el ID del canal del short
-            logger.error(f"No se pudo obtener el ID del canal para el short {self.short_id}: {str(e)}")
+            logger.error(f"No se pudo obtener el ID del canal para el short [{self.short_id}]: {str(e)}")
 
         # Establece un valor predeterminado de None si no se puede obtener el ID del canal del short
         return self.DEFAULT_VALUES['channel_id']
@@ -325,7 +325,7 @@ class YoutubeShort:
 
         except Exception as e:
             # Registra un mensaje de error si no se puede obtener el nombre del canal del short
-            logger.error(f"No se pudo obtener el nombre del canal para el short {self.short_id}: {str(e)}")
+            logger.error(f"No se pudo obtener el nombre del canal para el short [{self.short_id}]: {str(e)}")
 
         # Establece un valor predeterminado de None si no se puede obtener el nombre del canal del short
         return self.DEFAULT_VALUES['channel_name']
@@ -365,11 +365,11 @@ class YoutubeShort:
             return title
 
         except re.error as e:
-            logger.error(f"Fallo al aplicar el patrón de búsqueda {pattern} para el short {self.short_id}.")
+            logger.error(f"Fallo al aplicar el patrón de búsqueda {pattern} para el short [{self.short_id}].")
         except AttributeError as e:
-            logger.error(f"Error de atributo {e} al obtener los datos para el patron {pattern} para el short {self.short_id}.")
+            logger.error(f"Error de atributo {e} al obtener los datos para el patron {pattern} para el short [{self.short_id}].")
         except Exception as e:
-            logger.error(f"Error inesperado al obtener el título para el short {self.short_id}: {str(e)}")
+            logger.error(f"Error inesperado al obtener el título para el short [{self.short_id}]. Error: {str(e)}")
 
         # Establecer un título predeterminado si todo lo anterior falla
         return self.DEFAULT_VALUES['title']
@@ -404,9 +404,9 @@ class YoutubeShort:
             return int(short.views)
 
         except re.error as e:
-            logger.error(f"Fallo al aplicar el patrón de búsqueda {e} para el short {self.short_id}.")
+            logger.error(f"Fallo al aplicar el patrón de búsqueda {e} para el short [{self.short_id}].")
         except Exception as e:
-            logger.error(f"No se pudo obtener la cantidad de vistas para el short {self.short_id}: {str(e)}")
+            logger.error(f"No se pudo obtener la cantidad de vistas para el short [{self.short_id}]. Error: {str(e)}")
 
         # Establecer un valor predeterminado si todo lo anterior falla
         return self.DEFAULT_VALUES['views']
@@ -435,9 +435,9 @@ class YoutubeShort:
                 return get_time_len(len_seconds)
 
         except re.error as e:
-            logger.error(f"Fallo al aplicar el patrón de búsqueda {e} para el short {self.short_id}.")
+            logger.error(f"Fallo al aplicar el patrón de búsqueda {e} para el short [{self.short_id}].")
         except Exception as e:
-            logger.error(f"No se pudo obtener el momento más visto para el short {self.short_id}: {str(e)}")
+            logger.error(f"No se pudo obtener el momento más visto para el short [{self.short_id}]. Error: {str(e)}")
 
         # Establecer un valor predeterminado si todo lo anterior falla
         return self.DEFAULT_VALUES['mvm']
@@ -484,9 +484,9 @@ class YoutubeShort:
             
         # Gestion de errores
         except ValueError as e:
-            logger.error(f"Fallo al intentar formatear la fecha de publicación para el short {self.short_id}. Error: {e}")
+            logger.error(f"Fallo al intentar formatear la fecha de publicación para el short [{self.short_id}]. Error: {e}")
         except re.error as e:
-            logger.error(f"Fallo al aplicar los patrones de búsqueda {pattern_1}, {pattern_2} para obtener la fecha de publicacion para el short {self.short_id}.")
+            logger.error(f"Fallo al aplicar los patrones de búsqueda {pattern_1}, {pattern_2} para obtener la fecha de publicacion para el short [{self.short_id}].")
         except Exception as e:
             logger.error(f"No se pudo obtener la fecha de publicación para el short {self.id}: {str(e)}")
 
@@ -544,13 +544,13 @@ class YoutubeShort:
 
         except AttributeError:
             # Si no se encuentra ningún script, registra un mensaje de error
-            logger.error(f"No se encontraron scripts incrustados para obtener likes en el short {self.short_id}")
+            logger.error(f"No se encontraron scripts incrustados para obtener likes en el short [{self.short_id}]")
         except (ValueError, TypeError):
             # Si ocurre un error al convertir a entero, registra un mensaje de error
-            logger.error(f"No se pudo convertir la cantidad de likes a entero para el short {self.short_id}")
+            logger.error(f"No se pudo convertir la cantidad de likes a entero para el short [{self.short_id}]")
         except Exception as e:
             # Registra un mensaje de error genérico para cualquier otro error
-            logger.error(f"Error al obtener la cantidad de likes para el short {self.short_id}: {str(e)}")
+            logger.error(f"Error al obtener la cantidad de likes para el short [{self.short_id}]: {str(e)}")
 
         # Establecer un valor predeterminado si todo lo anterior falla
         return self.DEFAULT_VALUES['likes']
@@ -582,7 +582,7 @@ class YoutubeShort:
 
         except Exception as e:
             # Registra un mensaje de error si no se puede obtener la duración del short
-            logger.error(f"Error al obtener la duración del short {self.short_id}: {str(e)}")
+            logger.error(f"Error al obtener la duración del short [{self.short_id}]: {str(e)}")
 
         # Establece un valor predeterminado de '00:00:00' si no se puede obtener la duración del short
         return self.DEFAULT_VALUES['length']
@@ -629,12 +629,12 @@ class YoutubeShort:
                 return tags
 
         except AttributeError as e:
-            logger.error(f"Error al acceder a un atributo {str(e)} mientras se obtenian las etiquetas del short {self.short_id}.")
+            logger.error(f"Error al acceder a un atributo {str(e)} mientras se obtenian las etiquetas del short [{self.short_id}].")
         except KeyError as e:
-            logger.error(f"Error al acceder a una clave {str(e)} mientras se obtenian las etiquetas del short {self.short_id}.")
+            logger.error(f"Error al acceder a una clave {str(e)} mientras se obtenian las etiquetas del short [{self.short_id}].")
         except Exception as e:
             # Registra un mensaje de error si no se pueden obtener las etiquetas del short
-            logger.error(f"Error al obtener las etiquetas del short {self.short_id}: {str(e)}")
+            logger.error(f"Error al obtener las etiquetas del short [{self.short_id}]: {str(e)}")
 
         # Establece un valor predeterminado de "None" si no se pueden obtener las etiquetas del short
         return self.DEFAULT_VALUES['tags']
@@ -677,10 +677,10 @@ class YoutubeShort:
 
         except re.error as e:
             # Registra un mensaje de error si falla la expresión regular
-            logger.error(f"Fallo al aplicar el patrón de búsqueda {pattern} para obtener el recuento de comentarios del short {self.short_id}: {str(e)}")
+            logger.error(f"Fallo al aplicar el patrón de búsqueda {pattern} para obtener el recuento de comentarios del short [{self.short_id}]: {str(e)}")
         except Exception as e:
             # Registra un mensaje de error detallado si no se pueden obtener los comentarios del short
-            logger.error(f"Error al obtener el recuento de comentarios del short {self.short_id}: {str(e)}")
+            logger.error(f"Error al obtener el recuento de comentarios del short [{self.short_id}]: {str(e)}")
         
         # Establece un valor predeterminado de 0 si no se pueden obtener los comentarios del short
         return self.DEFAULT_VALUES['comment_count']
@@ -716,10 +716,10 @@ class YoutubeShort:
                 
                 else:
                     if self.DEBUG:
-                        logger.debug(f"Se intentó usar la API de YouTube para obtener los datos del short {self.short_id} pero hubo un fallo al procesar la petición.")
+                        logger.debug(f"Se intentó usar la API de YouTube para obtener los datos del short [{self.short_id}] pero hubo un fallo al procesar la petición.")
             else:
                 if self.DEBUG:
-                    logger.debug(f"Se intentó usar la API de YouTube para obtener los datos del short {self.short_id} pero la API está deshabilitada.")
+                    logger.debug(f"Se intentó usar la API de YouTube para obtener los datos del short [{self.short_id}] pero la API está deshabilitada.")
         
         except Exception as e:
             logger.warning(f"Fallo al cargar datos utilizando la API de YouTube: [{e}]")
@@ -749,20 +749,20 @@ class YoutubeShort:
         """
         # Verifica si los datos ya están cargados
         if self.data_loaded:
-            logger.info(f"Los datos del short {self.short_id} ya están cargados en el objeto YoutubeShort.")
+            logger.info(f"Los datos del short [{self.short_id}] ya están cargados en el objeto YoutubeShort.")
             self.fetch_status = True
             return
 
         # Intenta cargar datos del diccionario proporcionado durante la inicialización
         if info_dict:
             self.load_from_dict(info_dict)
-            logger.info(f"Los datos del short {self.short_id} se cargaron exitosamente desde el diccionario proporcionado durante la inicialización.")
+            logger.info(f"Los datos del short [{self.short_id}] se cargaron exitosamente desde el diccionario proporcionado durante la inicialización.")
             self.fetch_status = True
             return
 
         # Verifica si se especificó un método forzado
         if force_method:
-            logger.info(f"Los datos del short {self.short_id} se van a cargar forzadamente usando el método {force_method}.")
+            logger.info(f"Los datos del short [{self.short_id}] se van a cargar forzadamente usando el método {force_method}.")
             
             if force_method.lower() == 'api':
                 if self._load_data_from_api():
@@ -777,7 +777,7 @@ class YoutubeShort:
                 self.fetch_status = False
                 return
             
-            logger.error(f"No se pudo cargar datos del short {self.short_id} de YouTube usando métodos forzados.")
+            logger.error(f"No se pudo cargar datos del short [{self.short_id}] de YouTube usando métodos forzados.")
             self.fetch_status = False
             return
 
@@ -792,7 +792,7 @@ class YoutubeShort:
             return
 
         # Si no se pudo cargar datos de ninguna manera, registra un mensaje de error
-        logger.error(f"No se pudo cargar datos del short {self.short_id} de YouTube.")
+        logger.error(f"No se pudo cargar datos del short [{self.short_id}] de YouTube.")
         self.fetch_status = False
         return
     

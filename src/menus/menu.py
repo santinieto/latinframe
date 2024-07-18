@@ -19,6 +19,7 @@ from src.menus.menu_database import *
 from src.menus.menu_backups import *
 from src.menus.menu_plots import *
 from src.menus.menu_tests import *
+from src.database.db_fetch import *
 
 def configure_main_menu(app):
     """
@@ -47,3 +48,4 @@ def run_all_processes():
     fetch_products_data('all')
     fetch_all_youtube_data()
     fetch_similarwebs_data()
+    sql_export_db(sel='.csv')

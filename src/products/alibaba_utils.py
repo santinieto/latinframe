@@ -63,6 +63,12 @@ class AlibabaProductListings:
         'Pixar'
     ]
     
+    EXCLUDE_LIST = [
+        'leroyaumedesenfants',
+        'famosainternational',
+        'littlebabybumlullabies',
+    ]
+    
     ############################################################################
     # Metodos de incializacion
     ############################################################################
@@ -122,9 +128,12 @@ class AlibabaProductListings:
             
             # Paso todo a minusculas para evitar duplicados
             topics = [x.lower() for x in topics]
+            
+            # Filtro las tematicas a excluir para este sitio
+            filtered_topics = [x for x in topics if x not in self.EXCLUDE_LIST]
 
             # Agrego las tematicas a la lista y me aseguro que no haya repetidos
-            self.topics = list(set(self.topics + topics))
+            self.topics = list(set(self.topics + filtered_topics))
             
             if self.DEBUG:
                 logger.info(f'Se han añadido tematicas a la clase.\nLista actual: {self.topics}')

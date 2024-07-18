@@ -4,7 +4,7 @@ import os
 import sqlite3
 # import sys
 
-# Añade el directorio raíz del proyecto a sys.path
+# # Añade el directorio raíz del proyecto a sys.path
 # current_path = os.path.dirname(os.path.abspath(__file__))
 # project_root = os.path.abspath(os.path.join(current_path, '..', '..'))  # Ajusta según la estructura de tu proyecto
 # sys.path.append(project_root)
@@ -852,7 +852,7 @@ class Database:
             logger.error(f'Error al obtener IDs de canales de la tabla {table_name}. Error: {str(e)}')
             return []
 
-    def get_youtube_video_ids(self, table_name='VIDEO', sort='desc', channel_id_list=None):
+    def get_youtube_video_ids(self, channel_id_list=None):
         """
         Obtiene una lista de IDs de videos de YouTube de la tabla especificada.
 
@@ -864,26 +864,48 @@ class Database:
         Retorna:
         list: Lista de IDs de canales.
         """
-        query = f'SELECT DISTINCT VIDEO_ID FROM {table_name}'
-        if channel_id_list:
-            query += ' WHERE CHANNEL_ID IN ("{}")'.format(join_str(channel_id_list))
-        if sort == 'asc':
-            query += ' ORDER BY UPDATE_DATE ASC'
-        elif sort == 'desc':
-            query += ' ORDER BY UPDATE_DATE DESC'
-        else:
-            logger.warning(f'Orden no válido: {sort}. Usando el valor por defecto "desc".')
-            query += ' ORDER BY UPDATE_DATE DESC'
+        query = """
+        SELECT 
+            V.VIDEO_ID
+        FROM 
+            VIDEO V
+        JOIN 
+            (
+                SELECT 
+                    VIDEO_ID, 
+                    VIEWS, 
+                    LIKES, 
+                    UPDATE_DATE
+                FROM 
+                    VIDEO_RECORDS
+                WHERE 
+                    (VIDEO_ID, UPDATE_DATE) IN (
+                        SELECT 
+                            VIDEO_ID, 
+                            MAX(UPDATE_DATE) AS LATEST_UPDATE
+                        FROM 
+                            VIDEO_RECORDS
+                        GROUP BY 
+                            VIDEO_ID
+                    )
+            ) VR ON V.VIDEO_ID = VR.VIDEO_ID
+        WHERE 
+            V.CHANNEL_ID IN ("{}")
+        ORDER BY 
+            VR.VIEWS DESC, 
+            VR.LIKES DESC, 
+            VR.UPDATE_DATE DESC;
+        """.format(join_str(channel_id_list))
 
         try:
             db_ids = self.select(query, ())
             db_ids = [item[0] for item in db_ids]
             return db_ids
         except Exception as e:
-            logger.error(f'Error al obtener IDs de videos de la tabla {table_name}. Error: {str(e)}')
+            logger.error(f'Error al obtener IDs de videos de la tabla VIDEO. Error: {str(e)}')
             return []
         
-    def get_similar_domains(self, target='DOMAIN', table_name='SIMILARWEB_DOMAINS', sort='asc'):
+    def get_similar_domains(self):
         """
         Obtiene una lista de dominios únicos de la tabla especificada.
 
@@ -894,21 +916,44 @@ class Database:
         Retorna:
         list: Lista de dominios únicos.
         """
-        query = f'SELECT DISTINCT {target} FROM {table_name}'
-        if sort == 'asc':
-            query += ' ORDER BY domain ASC'
-        elif sort == 'desc':
-            query += ' ORDER BY domain DESC'
-        else:
-            logger.warning(f'Orden no válido: {sort}. Usando el valor por defecto "asc".')
-            query += ' ORDER BY domain ASC'
+        query = """
+        SELECT 
+            SD.DOMAIN
+        FROM 
+            SIMILARWEB_DOMAINS SD
+        JOIN 
+            (
+                SELECT 
+                    DOMAIN_ID, 
+                    GLOBAL_RANK, 
+                    UPDATE_DATE
+                FROM 
+                    SIMILARWEB_RECORDS
+                WHERE 
+                    (DOMAIN_ID, UPDATE_DATE) IN (
+                        SELECT 
+                            DOMAIN_ID, 
+                            MAX(UPDATE_DATE) 
+                        FROM 
+                            SIMILARWEB_RECORDS
+                        WHERE 
+                            GLOBAL_RANK IS NOT NULL AND GLOBAL_RANK != 0
+                        GROUP BY 
+                            DOMAIN_ID
+                    )
+                    AND GLOBAL_RANK IS NOT NULL AND GLOBAL_RANK != 0
+            ) SDR ON SD.DOMAIN_ID = SDR.DOMAIN_ID
+        ORDER BY 
+            SDR.GLOBAL_RANK, 
+            SDR.UPDATE_DATE DESC;
+        """
 
         try:
             query_res = self.select(query)
             domains = [x[0] for x in query_res]
             return domains
         except Exception as e:
-            logger.error(f'Error al obtener dominios de la tabla {table_name}. Error: {str(e)}')
+            logger.error(f'Error al obtener dominios de la tabla SIMILARWEB_DOMAINS. Error: {str(e)}')
             return []
         
     def get_topics(self):
@@ -1001,4 +1046,8 @@ if __name__ == '__main__':
     db = Database()
 
     # Add column
-    db.add_column('CHANNEL_RECORDS', 'SUBSCRIBERS', 'INTEGER')
+    # db.add_column('CHANNEL_RECORDS', 'SUBSCRIBERS', 'INTEGER')
+    
+    # print( db.get_similar_domains() )
+    
+    print( db.get_youtube_video_ids(channel_id_list=['UC2xjgvWb9cx5F637XjsUNxw']) )

@@ -315,12 +315,6 @@ class YoutubeManager:
             if self.load_videos_from_database:
                 self.load_video_ids_from_database()
     
-            if initialize_videos:
-                self.initialize_videos()
-        
-                if self.DEBUG:
-                    self.log_videos_info()
-    
             if initialize_shorts:
                 self.initialize_shorts()
         
@@ -332,6 +326,11 @@ class YoutubeManager:
         
                 if self.DEBUG:
                     self.log_playlists_info()
+            
+            # Esto va a ser lo ultimo que hagamos
+            if initialize_videos:
+                self.initialize_videos()
+                self.log_videos_info()
         
         if insert_data_to_db:
             self.insert_data_to_db()
@@ -398,10 +397,12 @@ class YoutubeManager:
             video_id_list = channel.video_id_list
             
             if self.enable_mp:
-                logger.info('Inicializando videos de Youtube en paralelo')
+                if self.DEBUG:
+                    logger.info('Inicializando videos de Youtube en paralelo')
                 self.parallel_video_initialize(video_id_list)
             else:
-                logger.info('Inicializando videos de Youtube en serie')
+                if self.DEBUG:
+                    logger.info('Inicializando videos de Youtube en serie')
                 self.serial_video_initialize(video_id_list)
             
             # Cuando termino le asigno los objetos de tipo video
@@ -454,15 +455,22 @@ class YoutubeManager:
             short_id_list = channel.short_id_list
             
             if self.enable_mp:
-                logger.info('Inicializando shorts de Youtube en paralelo')
+                if self.DEBUG:
+                    logger.info('Inicializando shorts de Youtube en paralelo')
                 self.parallel_short_initialize(short_id_list)
             else:
-                logger.info('Inicializando shorts de Youtube en serie')
+                if self.DEBUG:
+                    logger.info('Inicializando shorts de Youtube en serie')
                 self.serial_short_initialize(short_id_list)
             
             # Cuando termino le asigno los objetos de tipo short
             # al objeto de tipo short
             channel.shorts = self.shorts
+            
+            # # Agrego los videos de cada playlist a la lista de IDs
+            # # FIXME: Hay que implementar esto
+            # for short in channel.shorts:
+            #     channel.add_short_ids_to_list(new_video_ids=short.video_ids, source='short')
 
     def parallel_short_initialize(self, short_id_list):
         """
@@ -510,15 +518,21 @@ class YoutubeManager:
             playlist_id_list = channel.playlist_id_list
             
             if self.enable_mp:
-                logger.info('Inicializando playlists de Youtube en paralelo')
+                if self.DEBUG:
+                    logger.info('Inicializando playlists de Youtube en paralelo')
                 self.parallel_playlist_initialize(playlist_id_list)
             else:
-                logger.info('Inicializando playlists de Youtube en serie')
+                if self.DEBUG:
+                    logger.info('Inicializando playlists de Youtube en serie')
                 self.serial_playlist_initialize(playlist_id_list)
             
             # Cuando termino le asigno los objetos de tipo playlist
             # al objeto de tipo playlist
             channel.playlists = self.playlists
+            
+            # Agrego los videos de cada playlist a la lista de IDs
+            for playlist in channel.playlists:
+                channel.add_video_ids_to_list(new_video_ids=playlist.video_ids, source='playlist')
 
     def parallel_playlist_initialize(self, playlist_id_list):
         """
@@ -596,7 +610,7 @@ class YoutubeManager:
                 if self.DEBUG:
                     logger.info(f'Lista de videos a cargar: {video_id_list}')
                 
-                channel.add_video_ids_to_list(video_id_list)
+                channel.add_video_ids_to_list(video_id_list, source='database')
                 
         except Exception as e:
             logger.error(f"Error al cargar los canales desde la base de datos. Error: {e}.")

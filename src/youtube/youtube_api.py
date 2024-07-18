@@ -605,8 +605,6 @@ class YoutubeAPI:
                 data['likes'] = 0
                 data['n_videos'] = item['contentDetails']['itemCount']
                 data['video_ids'] = self.fetch_playlist_videos(playlist_id=playlist_id, n_videos_fetch=9999999)
-
-                logger.info(data)
             
         except Exception as e:
             logger.error(f'Se produjo un error al obtener la información para la playlist {playlist_id}. Error: {e}')

@@ -2,7 +2,7 @@
 import os
 # import sys
 
-# Añade el directorio raíz del proyecto a sys.path
+# # Añade el directorio raíz del proyecto a sys.path
 # current_path = os.path.dirname(os.path.abspath(__file__))
 # project_root = os.path.abspath(os.path.join(current_path, '..', '..'))  # Ajusta según la estructura de tu proyecto
 # sys.path.append(project_root)
@@ -61,6 +61,32 @@ class MeLiProductListings:
         'disney',
         'pixar',
         'Pixar'
+    ]
+    
+    EXCLUDE_LIST = [
+        'lellobeeespanol','leroyaumedesenfants','famosainternational',
+        'netflixlatam','fluffyjetproductions','tattyandmisifu',
+        'littlebabybumfrancais','labrujitatatty','elreinosorpresas',
+        'netflixanime','disneyplusla','littlebabybumitaliano',
+        'cocomelondeutsch','ratitaspandilleras','minitunscancionesinfantiles',
+        'mashabearturkey','littlebabybumdeutsch',
+        'netflixkcontent','littlebabybumlullabies','netflixindiaofficial',
+        'littlebabybumespanol',
+        'toysandfunnykids','imkonigreichderkinder','pacoelmarinero',
+        'cocomelonanimaltime','cleocuquinukrainian','netflixbrasil',
+        'cocomelonrussian','ttpmtoyreviews','disneyanimation',
+        'littleangelespanol','toycantando','disneymovietrailers',
+        'netflixjr','ninasfamilia','luckypennyshop',
+        'elreinodoremi','childrensnurseryrhymes','nikaymatsu',
+        'disneystudiosla','mashabearjapan','netflixturkiye',
+        'marvelhqla','cleoycuquin','cocomelonportugues',
+        'kidstvsongs','littlebabybumrussian','radiodisneyla',
+        'cocomelonfrancais','unboxingsurpriseegg','mashabearukraine',
+        'littlebabybumbrasil','cocomeloncodytime','stillwatchingnetflix',
+        'barbiecollectors','littlebabybumnederlands','mashaorso',
+        'disneyplus','netflixisajoke','mashabearswedish',
+        'netflixbehindthestreams','superdinosaurrussian','littlebabybumarabic',
+        'patyluoficial',
     ]
     
     ############################################################################
@@ -122,9 +148,12 @@ class MeLiProductListings:
             
             # Paso todo a minusculas para evitar duplicados
             topics = [x.lower() for x in topics]
+            
+            # Filtro las tematicas a excluir para este sitio
+            filtered_topics = [x for x in topics if x not in self.EXCLUDE_LIST]
 
             # Agrego las tematicas a la lista y me aseguro que no haya repetidos
-            self.topics = list(set(self.topics + topics))
+            self.topics = list(set(self.topics + filtered_topics))
             
             if self.DEBUG:
                 logger.info(f'Se han añadido tematicas a la clase.\nLista actual: {self.topics}')
@@ -284,6 +313,8 @@ class MeLiProductListings:
         return self.get_items()
 
 class MeLiProduct(Product):
+    DEBUG = False
+    
     def __init__(self, product_id=None, info_dict=None):
         # Actualiza los valores por defecto específicos de MeLiProduct
         updated_defaults = {
@@ -470,10 +501,27 @@ class MeLiProduct(Product):
                     self.product_id = match.group(0).replace('-', '')
                     return
             
-            if self.url:
-                logger.warning(f'No se encontró el ID del producto en la URL: [{self.url}]. Se van a usar otros métodos que pueden NO ser exactos.')
-            else:
-                logger.warning(f'No se encontro la URL del producto en el contenido HTML:\n\n{self.html_content}')
+                # Si tengo el ID de producto pero si tengo una URL intento usar esa
+                # esa URL
+                aux_html_content = get_http_response(url=self.url)
+                
+                # Intento buscar un elemento input con name='itemId'
+                elem = aux_html_content.find('input', {'name': 'itemId'})
+                if elem:
+                    self.product_id = elem.get('value')
+                    return
+                
+                # Intento buscar un formulario y extraer el ID de la acción
+                elem = aux_html_content.find('form')
+                if elem:
+                    self.product_id = elem.get('action').split('/')[-1]
+                    return
+                
+            if self.DEBUG:
+                if self.url:
+                    logger.warning(f'No se encontró el ID del producto en la URL: [{self.url}]. Se van a usar otros métodos que pueden NO ser exactos.')
+                else:
+                    logger.warning(f'No se encontro la URL del producto en el contenido HTML:\n\n{self.html_content}')
 
             # Si llegamos aquí, no se encontró un ID de producto en la URL
             # Intentar con otros métodos si hay contenido HTML
@@ -519,7 +567,8 @@ class MeLiProduct(Product):
             classes = [
                 'ui-search-item__group__element',
                 'ui-search-link__title-card',
-                'ui-search-link'
+                'ui-search-link',
+                'poly-component__title'
             ]
             for xclass in classes:
                 elem = self.html_content.find('a', class_=xclass)
@@ -551,7 +600,7 @@ class MeLiProduct(Product):
             if name_tag:
                 return name_tag.text.strip()
             else:
-                logger.warning("No se encontró ninguna etiqueta de nombre para el producto.")
+                logger.error(f"No se encontró ninguna etiqueta de nombre para el producto [{self.product_id}].")
                 return self.DEFAULT_VALUES['product_name']
         except Exception as e:
             # Si hay algún error, establecer el nombre por defecto y registrar el error
@@ -685,7 +734,8 @@ class MeLiProduct(Product):
             ]))
             rating = full_stars + half_stars * 0.5
         except AttributeError:
-            logger.warning(f"No se pudo obtener la calificación del producto [{self.product_id}]: no se encontró la etiqueta de calificación. URL: [{self.url}]")
+            if self.DEBUG:
+                logger.warning(f"No se pudo obtener la calificación del producto [{self.product_id}]: no se encontró la etiqueta de calificación. URL: [{self.url}]")
         
         return rating
 
@@ -807,16 +857,29 @@ class MeLiProduct(Product):
         return currency_symbol
 
 if __name__ == "__main__":
-    # Definir la categoría de productos
-    topics = "productos"
+    # # Definir la categoría de productos
+    # topics = "productos"
     
-    start_time = time.time()
+    # start_time = time.time()
     
-    meli_listings = MeLiProductListings(topics)
-    meli_listings.fetch_data()
-    meli_listings.show_items_content()
+    # meli_listings = MeLiProductListings(topics)
+    # meli_listings.fetch_data()
+    # meli_listings.show_items_content()
         
-    end_time = time.time()
-    execution_time = round( end_time - start_time, 3)
+    # end_time = time.time()
+    # execution_time = round( end_time - start_time, 3)
             
-    logger.info(f'Tiempo de ejecucion: {execution_time} segundos.')
+    # logger.info(f'Tiempo de ejecucion: {execution_time} segundos.')
+    
+    url = 'https://click1.mercadolibre.com.ar/mclics/clicks/external/MLA/count?a=T%2FcJ0WH%2F8LUb5ui9Ch9SBpbvraVIq7H2sV51p%2BhqhUIcwAKpGH%2BbIIS34jGZdZk6xPjpvnB0qdMOoBugwLdMQsFUwIrqC3TQi2D2CytuYdPrW%2F7oSyZvsiLGWPgrc8izlcXC39QDC5Ocj%2Bsf%2FJur6tPtmEcyfMCl42mHlYGvcuyDCfJIy%2FoRX%2BLpdvJq6CLfNY4kiRocqgOAxQyt3gHLerLEhvYN%2F3SylSX3fhqZ5d6dA%2BLPSh02T7Nq5Mt6ZBeqT7OFzCx%2BG9UL3jKtnqv2QaHIkR2GvnwzumMtSE0AggUGpd9YiywZ0N7Xz95cXpNLHR%2FgcFuoPD3I063XNVlJmvFj3si5rQodV8PtuVLlfSBE1%2FMSLCk7tTYYZ70GpRnmrBCBQLkW%2FyEdLup%2FbIaReibp%2FZmjp2yQvOua9NiIRrgMTTWX7gLFuj7wll2JyE%2BNxshK9of3Wh7NKSySUhAUEFShU24QFb56dauQxsNgZ6DlFTI4yu4j1lTysHqgarVQKghzGp37GCP3gJeuEqdOOTsRZsNbModunam3%2FsQ%2F9eKJz5b68OcjU%2FKLUZC7wirns9UhMrDmjTigJ6GaWGtDZrilxDOrEFk2kdA%2BBrrj3upWWS3ZECgPZz8DKJ2Ra4lFUI4CT2fb%2FSk8yPgDoQ5cLzj7hwquh2gQc3od6OBOV0SCs%2FbX0TY4imAntRCQxNquCLxXDkLhMuvmAznSusZWYly8Y%2FBE0ubPESHZyz9S&e=mclics%2Fadvertising-results-augmenter-on%2B15098%2Cmclics%2Fvariant-candidates%2B31710%2Cmclics%2Fpseudo-search-pads-buybox%2B7708%2Cmclics%2Fmax-bid-capped%2B36382%2Cmclics%2Fmax-bid-item-factor%2B23928&rb=x#polycard_client=search-nordic'
+    html_content = get_http_response(url=url)
+    
+    
+    # Intento buscar un elemento input con name='itemId'
+    elem = html_content.find('input', {'name': 'itemId'})
+    print(elem)
+    
+    # Intento buscar un formulario y extraer el ID de la acción
+    html_content.find('form')
+    print(elem)
+    

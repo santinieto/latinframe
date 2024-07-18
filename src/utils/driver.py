@@ -123,9 +123,9 @@ class Driver:
         try:
             # Configuración del navegador
             # Si quiero usar los drivers que tengo descargados
-            service = browser_options["service"](os.path.join(self.drivers_path, browser_options["driver_name"]))
+            # service = browser_options["service"](os.path.join(self.drivers_path, browser_options["driver_name"]))
             # Si quiero instalar los drivers cada vez
-            # service = browser_options["service"]( browser_options["driver_manager"]().install() )
+            service = browser_options["service"]( browser_options["driver_manager"]().install() )
             options = browser_options["options"]()
 
             for arg in browser_options.get("args", []):

@@ -63,6 +63,20 @@ class EbayProductListings:
         'Pixar'
     ]
     
+    EXCLUDE_LIST = [
+        'lellobeeespanol','leroyaumedesenfants','johnyjohnyelbebe',
+        'cancionesdelzoo','fluffyjetproductions','tattyandmisifu',
+        'littlebabybumfrancais','labrujitatatty','elreinosorpresas',
+        'littlebabybumitaliano','lagranjadezenon','duotiempodesol',
+        'littlebabybumdeutsch','sofiakarlbergs','littlebabybumlullabies',
+        'littlebabybumespanol','cleocuquinukrainian',
+        'nikaymatsu','cleoycuquin','littlebabybumrussian','marvellatino',
+        'netflixafterschool','littlebabybumbrasil','littlebabybumnederlands',
+        'mashaorso','netflixisajoke','mashabearswedish',
+        'littlebabybumarabic','patyluoficial','famosainternational',
+        'cocomelonfrancais','superdinosaurrussian'
+    ]
+    
     ############################################################################
     # Metodos de incializacion
     ############################################################################
@@ -122,9 +136,12 @@ class EbayProductListings:
             
             # Paso todo a minusculas para evitar duplicados
             topics = [x.lower() for x in topics]
+            
+            # Filtro las tematicas a excluir para este sitio
+            filtered_topics = [x for x in topics if x not in self.EXCLUDE_LIST]
 
             # Agrego las tematicas a la lista y me aseguro que no haya repetidos
-            self.topics = list(set(self.topics + topics))
+            self.topics = list(set(self.topics + filtered_topics))
             
             if self.DEBUG:
                 logger.info(f'Se han añadido tematicas a la clase.\nLista actual: {self.topics}')
