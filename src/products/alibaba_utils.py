@@ -67,6 +67,7 @@ class AlibabaProductListings:
         'leroyaumedesenfants',
         'famosainternational',
         'littlebabybumlullabies',
+        'cocomelonrussian',
     ]
     
     ############################################################################

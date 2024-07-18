@@ -391,22 +391,25 @@ class YoutubePlaylist:
         try:
             # Obtengo la lista de videos presentes para la playlist en la base de datos
             with Database() as db:
-                video_views = db.select(
+                result = db.select(
                     '''
-                    SELECT MAX(VR.VIEWS)
-                    FROM VIDEO_RECORDS VR, PLAYLIST_VIDEO PV
-                    WHERE VR.VIDEO_ID = PV.VIDEO_ID
-                    AND PV.PLAYLIST_ID = "{}"
+                    SELECT SUM(VR.VIEWS)
+                    FROM VIDEO_RECORDS VR
+                    WHERE VR.VIDEO_ID IN (
+                        SELECT PV.VIDEO_ID
+                        FROM PLAYLIST_VIDEO PV
+                        WHERE PV.PLAYLIST_ID = "{}"
+                    )
                     '''.format(self.playlist_id),
                     ())
-                video_views = [x[0] for x in video_views]
                 
-                if video_views:
-                    return sum(video_views)
+                if result:
+                    x = result[0][0]
+                    return x if x is not None else self.DEFAULT_VALUES['views']
                     
         # Gestion de errores
         except Exception as e:
-            logger.error(f"No se pudo obtener la fecha de publicación para el video {self.playlist_id}: {str(e)}")
+            logger.error(f"No se pudo obtener la cantidad de visualizaciones para la playlist {self.playlist_id}: {str(e)}")
         
         return views
     
@@ -461,7 +464,8 @@ class YoutubePlaylist:
                     
                     # Si se encuentran resultados, actualiza el ID del canal
                     if results:
-                        publish_date = results[0][0]
+                        x = results[0][0]
+                        publish_date = x if x is not None else self.DEFAULT_VALUES['publish_date']
                 except Exception as e:
                     logger.error(f'Error al obtener la fecha de publicacion de la playlist [{self.playlist_id}]. Error: {e}')
                     
@@ -483,22 +487,26 @@ class YoutubePlaylist:
         try:
             # Obtengo la lista de videos presentes para la playlist en la base de datos
             with Database() as db:
-                video_likes = db.select(
+                record = db.select(
                     '''
-                    SELECT MAX(VR.LIKES)
-                    FROM VIDEO_RECORDS VR, PLAYLIST_VIDEO PV
-                    WHERE VR.VIDEO_ID = PV.VIDEO_ID
-                    AND PV.PLAYLIST_ID = "{}"
+                    SELECT SUM(VR.LIKES)
+                    FROM VIDEO_RECORDS VR
+                    WHERE VR.VIDEO_ID IN (
+                        SELECT PV.VIDEO_ID
+                        FROM PLAYLIST_VIDEO PV
+                        WHERE PV.PLAYLIST_ID = "{}"
+                    )
                     '''.format(self.playlist_id),
                     ())
-                video_likes = [x[0] for x in video_likes]
                 
-                if video_likes:
-                    return sum(video_likes)
+                if record:
+                    return record[0][0]
+                else:
+                    return 0
                     
         # Gestion de errores
         except Exception as e:
-            logger.error(f"No se pudo obtener la fecha de publicación para el video {self.playlist_id}: {str(e)}")
+            logger.error(f"No se pudo obtener el recuento de Me Gusta para la playlist {self.playlist_id}: {str(e)}")
 
         return likes
     
@@ -655,7 +663,8 @@ if __name__ == "__main__":
     set_environment('settings.json')
     
     # Crear una instancia de YoutubePlaylist
-    playlist = YoutubePlaylist(playlist_id='PL5_hxvIU4KD0cv1o3VX70E-ySh6lMxOj5')
+    playlist = YoutubePlaylist(playlist_id='PLT1rvk7Trkw6fwEkuMl_I5t1PLvxAytL5')
+    # playlist = YoutubePlaylist(playlist_id='PLBRoHO-L7e4Iw_JjEw2IlpE_FeR-wzgPS')
 
     # Simular que los datos ya están cargados
     # Si está en True se acaba la ejecución del programa
@@ -672,6 +681,6 @@ if __name__ == "__main__":
         logger.info("Error al cargar los datos.")
     
     # Guardo el playlist en la base da datos
-    from src.database.db import Database
-    with Database() as db:
-        db.insert_playlist_record( playlist.to_dict() )
+    # from src.database.db import Database
+    # with Database() as db:
+    #     db.insert_playlist_record( playlist.to_dict() )

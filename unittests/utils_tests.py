@@ -1,11 +1,25 @@
-import unittest
-from unittest.mock import patch, Mock
+# Imports estándar de Python
+import os
+import sys
 import io
 
-try:
-    from src.utils import *
-except:
-    from utils import *
+# Añade la ruta del directorio principal al sys.path
+current_path = os.path.dirname(os.path.abspath(__file__))
+project_root = os.path.abspath(os.path.join(current_path, '..'))  # Ajusta según la estructura de tu proyecto
+sys.path.append(project_root)
+
+# Imports de terceros
+import unittest
+from unittest.mock import patch, Mock
+
+# Imports locales
+from src.utils.utils import *
+from src.logger.logger import Logger
+
+################################################################################
+# Genero una instancia del Logger
+################################################################################
+logger = Logger(os.path.basename(__file__)).get_logger()
 
 class TestUtils(unittest.TestCase):
 
@@ -132,6 +146,15 @@ class TestUtils(unittest.TestCase):
     def test_clean_and_parse_number_with_units_m(self):
         self.assertEqual(clean_and_parse_number("2M"), 2000000.0)
         self.assertEqual(clean_and_parse_number("2m"), 0.002)
+
+    def test_clean_and_parse_number_with_complex_text(self):
+        self.assertEqual(clean_and_parse_number("'230"), 230.0)
+        self.assertEqual(clean_and_parse_number("'230 k"), 230000.0)
+        self.assertEqual(clean_and_parse_number("'230 M"), 230000000.0)
+        self.assertEqual(clean_and_parse_number("'230 T"), 230000000000000.0)
+        self.assertEqual(clean_and_parse_number("'230k"), 230000.0)
+        self.assertEqual(clean_and_parse_number("'230M"), 230000000.0)
+        self.assertEqual(clean_and_parse_number("'230T"), 230000000000000.0)
 
     def test_clean_and_parse_number_with_units_g(self):
         self.assertEqual(clean_and_parse_number("3G"), 3000000000.0)
