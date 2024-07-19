@@ -2,8 +2,7 @@
 import os
 # import sys
 
-# Añade la ruta del directorio principal al sys.path
-# sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))))
+# # Añade la ruta del directorio principal al sys.path
 # current_path = os.path.dirname(os.path.abspath(__file__))
 # project_root = os.path.abspath(os.path.join(current_path, '..', '..'))  # Ajusta según la estructura de tu proyecto
 # sys.path.append(project_root)
@@ -79,7 +78,7 @@ class YoutubeVideo:
         """
         if 'video_id' not in info_dict:
             # Registra un mensaje de error y sale si no se proporciona el campo 'video_id'
-            logger.error("El campo 'video_id' no está presente en el diccionario de entrada.")
+            logger.error(f"El campo 'video_id' no está presente en el diccionario de entrada.\nDiccionario:\n\n{info_dict}")
             return
         
         for key, value in info_dict.items():
@@ -133,7 +132,7 @@ class YoutubeVideo:
         """
         self.html_content = html_content
         if self.DEBUG:
-            logger.info(f"Contenido HTML establecido con éxito para el video {self.video_id}.")
+            logger.info(f"Contenido HTML establecido con éxito para el video [{self.video_id}].")
         
     def fetch_html_content(self, url_type='id', ovr_id=None, scrap_url=None):
         """ 
@@ -146,7 +145,7 @@ class YoutubeVideo:
         """
         # Si se proporciona un ID de video para sobrescribir, úsalo
         if ovr_id is not None:
-            logger.warning(f"Se va a cambiar el ID del video {self.video_id} por {ovr_id}")
+            logger.warning(f"Se va a cambiar el ID del video [{self.video_id}] por [{ovr_id}]")
             self.video_id = ovr_id
             
         # Define una URL por defecto para hacer scraping
@@ -170,7 +169,7 @@ class YoutubeVideo:
         self.html_content = get_http_response(scrap_url, response_type='text')
         
         if self.html_content is None:
-            logger.error(f"No se pudo obtener el contenido HTML para el video {self.video_id}.")
+            logger.error(f"No se pudo obtener el contenido HTML para el video [{self.video_id}].")
 
     def save_html_content(self, html_content=None):
         """
@@ -190,7 +189,7 @@ class YoutubeVideo:
             filename = f'html_video_{video_id}_{current_date}.html'
             
             # Directorio donde se guardarán los archivos HTML
-            filepath = os.path.join(os.environ.get("SOFT_RESULTS", ''), 'videos')
+            filepath = os.path.join(os.environ.get("SOFT_RESULTS", r'results/'), 'videos')
             
             # Crea el directorio si no existe
             os.makedirs(filepath, exist_ok=True)
@@ -224,7 +223,7 @@ class YoutubeVideo:
 
             # Si hubo un fallo al obtener el código HTML del video, logeo un error y salgo de la función
             if self.html_content in [False, None]:
-                logger.error(f"No se dispone de contenido HTML para el video {self.video_id}.")
+                logger.error(f"No se dispone de contenido HTML para el video [{self.video_id}].")
                 return False
 
             if self.save_html:
@@ -263,11 +262,11 @@ class YoutubeVideo:
             if match:
                 return match.group(1)
         except re.error as e:
-            logger.error(f"Fallo al aplicar el patrón de búsqueda {e} para el canal {self.channel_id}.")
+            logger.error(f"Fallo al aplicar el patrón de búsqueda [{e}] para el canal [{self.channel_id}].")
         except AttributeError as e:
-            logger.error(f"Error de atributo {e} al obtener los datos para el patron {pattern} para el canal {self.channel_id}.")
+            logger.error(f"Error de atributo [{e}] al obtener los datos para el patron [{pattern}] para el canal [{self.channel_id}].")
         except Exception as e:
-            logger.error(f"Error inesperado al obtener los datos para el patron {pattern} para el canal {self.channel_id}.")
+            logger.error(f"Error inesperado al obtener los datos para el patron [{pattern}] para el canal {self.channel_id}.")
         return None
     
     def _fetch_channel_id(self, pattern=None):
@@ -295,7 +294,7 @@ class YoutubeVideo:
 
         except Exception as e:
             # Registra un mensaje de error si no se puede obtener el ID del canal del video
-            logger.error(f"No se pudo obtener el ID del canal para el video {self.video_id}: {str(e)}")
+            logger.error(f"No se pudo obtener el ID del canal para el video [{self.video_id}]: {str(e)}")
 
         # Establece un valor predeterminado de None si no se puede obtener el ID del canal del video
         return self.DEFAULT_VALUES['channel_id']
@@ -325,7 +324,7 @@ class YoutubeVideo:
 
         except Exception as e:
             # Registra un mensaje de error si no se puede obtener el nombre del canal del video
-            logger.error(f"No se pudo obtener el nombre del canal para el video {self.video_id}: {str(e)}")
+            logger.error(f"No se pudo obtener el nombre del canal para el video [{self.video_id}]: {str(e)}")
 
         # Establece un valor predeterminado de None si no se puede obtener el nombre del canal del video
         return self.DEFAULT_VALUES['channel_name']
@@ -365,11 +364,11 @@ class YoutubeVideo:
             return title
 
         except re.error as e:
-            logger.error(f"Fallo al aplicar el patrón de búsqueda {pattern} para el video {self.video_id}.")
+            logger.error(f"Fallo al aplicar el patrón de búsqueda [{pattern}] para el video [{self.video_id}].")
         except AttributeError as e:
-            logger.error(f"Error de atributo {e} al obtener los datos para el patron {pattern} para el video {self.video_id}.")
+            logger.error(f"Error de atributo [{e}] al obtener los datos para el patron [{pattern}] para el video [{self.video_id}].")
         except Exception as e:
-            logger.error(f"Error inesperado al obtener el título para el video {self.video_id}: {str(e)}")
+            logger.error(f"Error inesperado al obtener el título para el video [{self.video_id}]: {str(e)}")
 
         # Establecer un título predeterminado si todo lo anterior falla
         return self.DEFAULT_VALUES['title']
@@ -404,9 +403,9 @@ class YoutubeVideo:
             return int(video.views)
 
         except re.error as e:
-            logger.error(f"Fallo al aplicar el patrón de búsqueda {e} para el video {self.video_id}.")
+            logger.error(f"Fallo al aplicar el patrón de búsqueda [{e}] para el video [{self.video_id}].")
         except Exception as e:
-            logger.error(f"No se pudo obtener la cantidad de vistas para el video {self.video_id}: {str(e)}")
+            logger.error(f"No se pudo obtener la cantidad de vistas para el video [{self.video_id}]: {str(e)}")
 
         # Establecer un valor predeterminado si todo lo anterior falla
         return self.DEFAULT_VALUES['views']
@@ -435,9 +434,9 @@ class YoutubeVideo:
                 return get_time_len(len_seconds)
 
         except re.error as e:
-            logger.error(f"Fallo al aplicar el patrón de búsqueda {e} para el video {self.video_id}.")
+            logger.error(f"Fallo al aplicar el patrón de búsqueda [{e}] para el video [{self.video_id}].")
         except Exception as e:
-            logger.error(f"No se pudo obtener el momento más visto para el video {self.video_id}: {str(e)}")
+            logger.error(f"No se pudo obtener el momento más visto para el video [{self.video_id}]: {str(e)}")
 
         # Establecer un valor predeterminado si todo lo anterior falla
         return self.DEFAULT_VALUES['mvm']
@@ -484,11 +483,11 @@ class YoutubeVideo:
             
         # Gestion de errores
         except ValueError as e:
-            logger.error(f"Fallo al intentar formatear la fecha de publicación para el video {self.video_id}. Error: {e}")
+            logger.error(f"Fallo al intentar formatear la fecha de publicación para el video [{self.video_id}]. Error: {e}")
         except re.error as e:
-            logger.error(f"Fallo al aplicar los patrones de búsqueda {pattern_1}, {pattern_2} para obtener la fecha de publicacion para el video {self.video_id}.")
+            logger.error(f"Fallo al aplicar los patrones de búsqueda [{pattern_1}], [{pattern_2}] para obtener la fecha de publicacion para el video [{self.video_id}].")
         except Exception as e:
-            logger.error(f"No se pudo obtener la fecha de publicación para el video {self.id}: {str(e)}")
+            logger.error(f"No se pudo obtener la fecha de publicación para el video [{self.id}]: {str(e)}")
 
         return self.DEFAULT_VALUES['publish_date']
 
@@ -544,13 +543,13 @@ class YoutubeVideo:
 
         except AttributeError:
             # Si no se encuentra ningún script, registra un mensaje de error
-            logger.error(f"No se encontraron scripts incrustados para obtener likes en el video {self.video_id}")
+            logger.error(f"No se encontraron scripts incrustados para obtener likes en el video [{self.video_id}]")
         except (ValueError, TypeError):
             # Si ocurre un error al convertir a entero, registra un mensaje de error
-            logger.error(f"No se pudo convertir la cantidad de likes a entero para el video {self.video_id}")
+            logger.error(f"No se pudo convertir la cantidad de likes a entero para el video [{self.video_id}]")
         except Exception as e:
             # Registra un mensaje de error genérico para cualquier otro error
-            logger.error(f"Error al obtener la cantidad de likes para el video {self.video_id}: {str(e)}")
+            logger.error(f"Error al obtener la cantidad de likes para el video [{self.video_id}]: {str(e)}")
 
         # Establecer un valor predeterminado si todo lo anterior falla
         return self.DEFAULT_VALUES['likes']
@@ -582,7 +581,7 @@ class YoutubeVideo:
 
         except Exception as e:
             # Registra un mensaje de error si no se puede obtener la duración del video
-            logger.error(f"Error al obtener la duración del video {self.video_id}: {str(e)}")
+            logger.error(f"Error al obtener la duración del video [{self.video_id}]: {str(e)}")
 
         # Establece un valor predeterminado de '00:00:00' si no se puede obtener la duración del video
         return self.DEFAULT_VALUES['length']
@@ -629,12 +628,12 @@ class YoutubeVideo:
                 return tags
 
         except AttributeError as e:
-            logger.error(f"Error al acceder a un atributo {str(e)} mientras se obtenian las etiquetas del video {self.video_id}.")
+            logger.error(f"Error al acceder a un atributo [{str(e)}] mientras se obtenian las etiquetas del video [{self.video_id}].")
         except KeyError as e:
-            logger.error(f"Error al acceder a una clave {str(e)} mientras se obtenian las etiquetas del video {self.video_id}.")
+            logger.error(f"Error al acceder a una clave [{str(e)}] mientras se obtenian las etiquetas del video [{self.video_id}].")
         except Exception as e:
             # Registra un mensaje de error si no se pueden obtener las etiquetas del video
-            logger.error(f"Error al obtener las etiquetas del video {self.video_id}: {str(e)}")
+            logger.error(f"Error al obtener las etiquetas del video [{self.video_id}]: {str(e)}")
 
         # Establece un valor predeterminado de "None" si no se pueden obtener las etiquetas del video
         return self.DEFAULT_VALUES['tags']
@@ -658,29 +657,29 @@ class YoutubeVideo:
         patterns = []
         if pattern is not None:
             patterns.append( pattern )
+        patterns.append( r'"commentCount":\{"simpleText":"(\d+)"\}' )
         patterns.append( r'"commentCount":[ ]*\{(.*?)\}' )
         
         try:
             for pattern in patterns:
                 # Intentar obtener la cantidad de likes utilizando el patrón dado
                 comments_str = self._fetch_data_from_pattern(pattern, self.html_content)
-            
+                
                 # Si obtengo un resultado válido, conviértelo a entero
                 if comments_str:
-                    matches = re.search(r'(\d+\.\d+)\s*([A-Za-z]*)', comments_str)
-                    comments_cnt = matches.group(1)
-                    scale = matches.group(2)
-                    if scale:
-                        comments_cnt += scale
-                    
-                    return clean_and_parse_number(comments_cnt)
+                    matches = re.search(r'(\d+\s*[kKmMgGtTu])', comments_str)
+                    if matches:
+                        comments_str = matches.group(1)
+                        return clean_and_parse_number(comments_str)
+                    else:
+                        return int(comments_str)
 
         except re.error as e:
             # Registra un mensaje de error si falla la expresión regular
-            logger.error(f"Fallo al aplicar el patrón de búsqueda {pattern} para obtener el recuento de comentarios del video {self.video_id}: {str(e)}")
+            logger.error(f"Fallo al aplicar el patrón de búsqueda [{pattern}] para obtener el recuento de comentarios del video [{self.video_id}]: {str(e)}")
         except Exception as e:
             # Registra un mensaje de error detallado si no se pueden obtener los comentarios del video
-            logger.error(f"Error al obtener el recuento de comentarios del video {self.video_id}: {str(e)}")
+            logger.error(f"Error al obtener el recuento de comentarios del video [{self.video_id}]: {str(e)}")
         
         # Establece un valor predeterminado de 0 si no se pueden obtener los comentarios del video
         return self.DEFAULT_VALUES['comment_count']
@@ -722,7 +721,7 @@ class YoutubeVideo:
                     logger.debug(f"Se intentó usar la API de YouTube para obtener los datos del video [{self.video_id}] pero la API está deshabilitada.")
         
         except Exception as e:
-            logger.warning(f"Fallo al cargar datos utilizando la API de YouTube: {e}")
+            logger.warning(f"Fallo al cargar datos utilizando la API de YouTube. Error: {e}")
 
         return False
 
@@ -749,20 +748,20 @@ class YoutubeVideo:
         """
         # Verifica si los datos ya están cargados
         if self.data_loaded:
-            logger.info(f"Los datos del video {self.video_id} ya están cargados en el objeto YoutubeVideo.")
+            logger.info(f"Los datos del video [{self.video_id}] ya están cargados en el objeto YoutubeVideo.")
             self.fetch_status = True
             return
 
         # Intenta cargar datos del diccionario proporcionado durante la inicialización
         if info_dict:
             self.load_from_dict(info_dict)
-            logger.info(f"Los datos del video {self.video_id} se cargaron exitosamente desde el diccionario proporcionado durante la inicialización.")
+            logger.info(f"Los datos del video [{self.video_id}] se cargaron exitosamente desde el diccionario proporcionado durante la inicialización.")
             self.fetch_status = True
             return
 
         # Verifica si se especificó un método forzado
         if force_method:
-            logger.info(f"Los datos del video {self.video_id} se van a cargar forzadamente usando el método {force_method}.")
+            logger.info(f"Los datos del video [{self.video_id}] se van a cargar forzadamente usando el método {force_method}.")
             
             if force_method.lower() == 'api':
                 if self._load_data_from_api():
@@ -777,7 +776,7 @@ class YoutubeVideo:
                 self.fetch_status = False
                 return
             
-            logger.error(f"No se pudo cargar datos del video {self.video_id} de YouTube usando métodos forzados.")
+            logger.error(f"No se pudo cargar datos del video [{self.video_id}] de YouTube usando métodos forzados.")
             self.fetch_status = False
             return
 
@@ -792,23 +791,21 @@ class YoutubeVideo:
             return
 
         # Si no se pudo cargar datos de ninguna manera, registra un mensaje de error
-        logger.error(f"No se pudo cargar datos del video {self.video_id} de YouTube.")
+        logger.error(f"No se pudo cargar datos del video [{self.video_id}] de YouTube.")
         self.fetch_status = False
         return
     
 if __name__ == "__main__":
     # Crear una instancia de YoutubeVideo
-    # video = YoutubeVideo(video_id='dQw4w9WgXcQ') # Rick Astley - Never Gonna Give You Up
-    # video = YoutubeVideo(video_id='9bZkp7q19f0') # PSY - GANGNAM STYLE
-    # video = YoutubeVideo(video_id='5a9ozuMcMYY') # One More Time - Jack Black
-    video = YoutubeVideo(video_id='tVj0ZTS4WF4') # Maroon 5 - Sugar
+    video = YoutubeVideo(video_id='FybgNacJfY0')
 
     # Simular que los datos ya están cargados
     # Si está en True se acaba la ejecución del programa
     video.data_loaded = False
 
     # Llamar al método fetch_data
-    success = video.fetch_data(force_method='html')
+    video.fetch_data(force_method='html')
+    success = video.fetch_status
 
     # Verificar si se cargaron los datos con éxito
     if success:

@@ -596,12 +596,19 @@ class MeLiProduct(Product):
         
         try:
             # Intentar obtener el nombre del producto
-            name_tag = self.html_content.find('h2', class_='ui-search-item__title')
+            name_tag = self.html_content.find('h2', class_=[
+                'ui-search-item__title',
+                'poly-box',
+            ])
             if name_tag:
                 return name_tag.text.strip()
-            else:
-                logger.error(f"No se encontró ninguna etiqueta de nombre para el producto [{self.product_id}].")
-                return self.DEFAULT_VALUES['product_name']
+            
+            name_tag = self.html_content.find('h1', class_='ui-pdp-title')
+            if name_tag:
+                return name_tag.text.strip()
+            
+            logger.error(f"No se encontró ninguna etiqueta de nombre para el producto [{self.product_id}].\n\nURL: {self.url}\n\nHTML:\n\n{self.html_content}")
+            return self.DEFAULT_VALUES['product_name']
         except Exception as e:
             # Si hay algún error, establecer el nombre por defecto y registrar el error
             logger.error(f"Error al obtener el nombre del producto {self.product_id}. Error: {e}")

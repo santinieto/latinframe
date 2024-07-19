@@ -2,8 +2,7 @@
 import os
 # import sys
 
-# Añade la ruta del directorio principal al sys.path
-# sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))))
+# # Añade la ruta del directorio principal al sys.path
 # current_path = os.path.dirname(os.path.abspath(__file__))
 # project_root = os.path.abspath(os.path.join(current_path, '..', '..'))  # Ajusta según la estructura de tu proyecto
 # sys.path.append(project_root)
@@ -658,22 +657,22 @@ class YoutubeShort:
         patterns = []
         if pattern is not None:
             patterns.append( pattern )
+        patterns.append( r'"commentCount":\{"simpleText":"(\d+)"\}' )
         patterns.append( r'"commentCount":[ ]*\{(.*?)\}' )
         
         try:
             for pattern in patterns:
                 # Intentar obtener la cantidad de likes utilizando el patrón dado
                 comments_str = self._fetch_data_from_pattern(pattern, self.html_content)
-            
+                
                 # Si obtengo un resultado válido, conviértelo a entero
                 if comments_str:
-                    matches = re.search(r'(\d+\.\d+)\s*([A-Za-z]*)', comments_str)
-                    comments_cnt = matches.group(1)
-                    scale = matches.group(2)
-                    if scale:
-                        comments_cnt += scale
-                    
-                    return clean_and_parse_number(comments_cnt)
+                    matches = re.search(r'(\d+\s*[kKmMgGtTu])', comments_str)
+                    if matches:
+                        comments_str = matches.group(1)
+                        return clean_and_parse_number(comments_str)
+                    else:
+                        return int(comments_str)
 
         except re.error as e:
             # Registra un mensaje de error si falla la expresión regular
@@ -801,14 +800,14 @@ if __name__ == "__main__":
     set_environment('settings.json')
     
     # Crear una instancia de YoutubeShort
-    short = YoutubeShort(short_id='5Q18_KxEQTQ')
+    short = YoutubeShort(short_id='2pDs7d8TjWE')
 
     # Simular que los datos ya están cargados
     # Si está en True se acaba la ejecución del programa
     short.data_loaded = False
 
     # Llamar al método fetch_data
-    short.fetch_data(force_method='api')
+    short.fetch_data(force_method='html')
 
     # Verificar si se cargaron los datos con éxito
     if short.fetch_status:

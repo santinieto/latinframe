@@ -184,7 +184,7 @@ class YoutubePlaylist:
             filename = f'html_playlist_{playlist_id}_{current_date}.html'
             
             # Directorio donde se guardarán los archivos HTML
-            filepath = os.path.join(os.environ.get("SOFT_RESULTS", ''), 'playlist')
+            filepath = os.path.join(os.environ.get("SOFT_RESULTS", r'results/'), 'playlist')
             
             # Crea el directorio si no existe
             os.makedirs(filepath, exist_ok=True)
@@ -223,6 +223,9 @@ class YoutubePlaylist:
 
             if self.save_html:
                 self.save_html_content()
+            
+            # Busco el ID del canal porque lo voy a necesitar
+            self.channel_id = self._fetch_channel_id()
 
             # Crear el diccionario para los datos
             playlist_data = {
@@ -235,8 +238,6 @@ class YoutubePlaylist:
                 'n_videos': self._fetch_n_videos(),
                 'video_ids': self._fetch_video_ids(),
             }
-            
-            playlist_data['channel_id'] = self._fetch_channel_id(playlist_data['channel_name'])
 
             # Actualiza la información de la playlist con los datos obtenidos del scraping
             self.load_from_dict(playlist_data)
@@ -276,25 +277,30 @@ class YoutubePlaylist:
         # ID del canal predeterminado
         channel_id = self.DEFAULT_VALUES['channel_id']
         
-        # Si no se proporciona un nombre de canal, devuelve el ID predeterminado
-        if not channel_name:
-            return channel_id
-        
-        # Aca falta algo para buscar el ID por otro lado
-        # Si no se encuentra en la base de datos, podrías agregar una búsqueda adicional aquí
+        # Expresión regular para encontrar el patrón en el contenido HTML
+        pattern = r'\/channel\/(UC[a-zA-Z0-9_-]+)'
+
+        # Encontrar todas las coincidencias en la cadena
+        matches = re.findall(pattern, self.html_content)
+
+        # Iterar a través de todas las coincidencias y mostrar el resultado
+        for match in matches:
+            if match.startswith('UC'):
+                return match
         
         # Obtengo el ID desde la base de datos
-        with Database() as db:
-            try:
-                results = db.select(
-                    'SELECT DISTINCT CHANNEL_ID FROM CHANNEL WHERE CHANNEL_NAME = "{}"'.format(channel_name),
-                    ())
-                
-                # Si se encuentran resultados, actualiza el ID del canal
-                if results:
-                    channel_id = results[0][0]
-            except Exception as e:
-                logger.error(f'Error al obtener el ID del canal para el nombre [{channel_name}]. Error: {e}')
+        if channel_name:
+            with Database() as db:
+                try:
+                    results = db.select(
+                        'SELECT DISTINCT CHANNEL_ID FROM CHANNEL WHERE CHANNEL_NAME = "{}"'.format(channel_name),
+                        ())
+                    
+                    # Si se encuentran resultados, actualiza el ID del canal
+                    if results:
+                        channel_id = results[0][0]
+                except Exception as e:
+                    logger.error(f'Error al obtener el ID del canal para el nombre [{channel_name}]. Error: {e}')
         
         # Devuelve el ID del canal (puede ser el predeterminado si no se encuentra)
         return channel_id
@@ -313,7 +319,7 @@ class YoutubePlaylist:
         """
         try:
             # Si no se proporciona un patrón, se utiliza uno predeterminado
-            pattern = r'"ownerChannelName":"(.*?)"' if pattern is None else pattern
+            pattern = r'"shortBylineText":\{"runs":\[\{"text":"(.*?)"' if pattern is None else pattern
 
             # Intenta obtener el nombre del canal la playlist utilizando el patrón dado en el HTML
             channel_name = self._fetch_data_from_pattern(pattern, self.html_content)
@@ -321,8 +327,21 @@ class YoutubePlaylist:
             # Si se encuentra el nombre del canal la playlist, devolverlo
             if channel_name:
                 return channel_name
-
-            # Construir una URL alternativa para hacer scraping si el método principal falla
+        
+            # Obtengo el ID desde la base de datos
+            with Database() as db:
+                try:
+                    results = db.select(
+                        'SELECT DISTINCT CHANNEL_NAME FROM CHANNEL WHERE CHANNEL_ID = "{}"'.format(self.channel_id),
+                        ())
+                    
+                    # Si se encuentran resultados, actualiza el ID del canal
+                    if results:
+                        return results[0][0]
+                except Exception as e:
+                    logger.error(f'Error al obtener el nombre del canal para el ID [{self.channel_id}]. Error: {e}')
+            
+            # Obtengo el ID desde el formato JSON
             url = f'https://www.youtube.com/oembed?url=http://www.youtube.com/playlist?list={self.playlist_id}&format=json'
             # Obtener la respuesta HTTP
             response = requests.get(url)
@@ -377,11 +396,11 @@ class YoutubePlaylist:
             return title
 
         except re.error as e:
-            logger.error(f"Fallo al aplicar el patrón de búsqueda {pattern} para el video [{self.playlist_id}].")
+            logger.error(f"Fallo al aplicar el patrón de búsqueda {pattern} para la playlist [{self.playlist_id}].")
         except AttributeError as e:
-            logger.error(f"Error de atributo {e} al obtener los datos para el patron {pattern} para el video [{self.playlist_id}].")
+            logger.error(f"Error de atributo {e} al obtener los datos para el patron {pattern} para la playlist [{self.playlist_id}].")
         except Exception as e:
-            logger.error(f"Error inesperado al obtener el título para el video [{self.playlist_id}]: {str(e)}")
+            logger.error(f"Error inesperado al obtener el título para la playlist [{self.playlist_id}]: {str(e)}")
     
     def _fetch_playlist_views(self):
         """ 
@@ -471,11 +490,11 @@ class YoutubePlaylist:
                     
         # Gestion de errores
         except ValueError as e:
-            logger.error(f"Fallo al intentar formatear la fecha de publicación para el video {self.video_id}. Error: {e}")
+            logger.error(f"Fallo al intentar formatear la fecha de publicación para la playlist {self.playlist_id}. Error: {e}")
         except re.error as e:
-            logger.error(f"Fallo al aplicar los patrones de búsqueda {pattern_1}, {pattern_2} para obtener la fecha de publicacion para el video {self.video_id}.")
+            logger.error(f"Fallo al aplicar los patrones de búsqueda {pattern_1}, {pattern_2} para obtener la fecha de publicacion para la playlist {self.playlist_id}.")
         except Exception as e:
-            logger.error(f"No se pudo obtener la fecha de publicación para el video {self.id}: {str(e)}")
+            logger.error(f"No se pudo obtener la fecha de publicación para la playlist {self.id}: {str(e)}")
 
         return publish_date
     
@@ -660,10 +679,10 @@ class YoutubePlaylist:
     
 if __name__ == "__main__":
     from src.utils.environment import set_environment
-    set_environment('settings.json')
+    # set_environment('settings.json')
     
     # Crear una instancia de YoutubePlaylist
-    playlist = YoutubePlaylist(playlist_id='PLT1rvk7Trkw6fwEkuMl_I5t1PLvxAytL5')
+    playlist = YoutubePlaylist(playlist_id='OLAK5uy_mk4cREVIom_oyW0I6o1dJ-HnAoMPNMFlQ')
     # playlist = YoutubePlaylist(playlist_id='PLBRoHO-L7e4Iw_JjEw2IlpE_FeR-wzgPS')
 
     # Simular que los datos ya están cargados

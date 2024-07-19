@@ -2,7 +2,7 @@
 import os
 # import sys
 
-# Añade el directorio raíz del proyecto a sys.path
+# # Añade el directorio raíz del proyecto a sys.path
 # current_path = os.path.dirname(os.path.abspath(__file__))
 # project_root = os.path.abspath(os.path.join(current_path, '..', '..'))  # Ajusta según la estructura de tu proyecto
 # sys.path.append(project_root)
@@ -16,6 +16,7 @@ from bs4 import BeautifulSoup
 from src.utils.utils import get_http_response, get_formatted_date, clean_and_parse_number, getenv
 from src.logger.logger import Logger
 from src.youtube.youtube_api import YoutubeAPI
+from src.database.db import Database
 
 ################################################################################
 # Genero una instancia del Logger
@@ -538,15 +539,32 @@ class YoutubeChannel:
             regex = r'"playlistId":"(.*?)"'
             matches = re.findall(regex, tmp_html_content)
             
-            # Elimino duplicatos y conformo la lista final
-            playlist_ids = list(set(matches))
+            # Obtengo las playlists que estan en la base de datos
+            with Database() as db:
+                query = 'SELECT DISTINCT PLAYLIST_ID FROM PLAYLIST WHERE CHANNEL_ID = "{}"'.format(self.channel_id)
+                results = db.select(query,())
+                if results:
+                    db_playlist_ids = set(x[0] for x in results)
+                    if self.DEBUG:
+                        logger.info('Playlists en la base de datos: {}'.format(db_playlist_ids))
+                else:
+                    db_playlist_ids = set()
+        
+            # Elimino duplicados y convierto a lista para mantener el orden original
+            matches = list(dict.fromkeys(matches))
             
-            # Limito la cantidad de playlists
-            if len(playlist_ids) > self.n_playlists_fetch:
-                playlist_ids = playlist_ids[:self.n_playlists_fetch]
+            # Encuentro las playlists que no están en la base de datos
+            new_playlists = [p for p in matches if p not in db_playlist_ids]
             
-            # Devuelvo el resultado
-            return playlist_ids
+            # Limito la cantidad de playlists si es necesario
+            if len(new_playlists) > self.n_playlists_fetch:
+                new_playlists = new_playlists[:self.n_playlists_fetch]
+            
+            # Añado las playlists de la base de datos al final de la lista
+            final_playlist_ids = new_playlists + list(db_playlist_ids)
+            
+            # Devuelvo el resultado sin repeticiones
+            return final_playlist_ids
         
         except Exception as e:
             # Registrar el error y devolver una lista vacía en caso de fallo
@@ -806,17 +824,15 @@ class YoutubeChannel:
 
 if __name__ == "__main__":
     # Crear una instancia de YoutubeChannel
-    channel = YoutubeChannel(channel_id='UC_x5XG1OV2P6uZZ5FSM9Ttw') # Google Developers
-    # channel = YoutubeChannel(channel_id='UCsT0YIqwnpJCM-mx7-gSA4Q') # TED Talks
-    # channel = YoutubeChannel(channel_id='UC6nSFpj9HTCZ5t-N3Rm3-HA') # Vsauce
-    # channel = YoutubeChannel(channel_id='UCXuqSBlHAE6Xw-yeJA0Tunw') # Linus Tech Tips
+    channel = YoutubeChannel(channel_id='UCbCmjCuTUZos6Inko4u57UQ') # Cocomelon
 
     # Simular que los datos ya están cargados
     # Si esta en True se acaba la ejecucion del programa
     channel.data_loaded = False
 
     # Llamar al método fetch_data
-    success = channel.fetch_data(force_method='html')
+    channel.fetch_data(force_method='html')
+    success = channel.fetch_status
 
     # Verificar si se cargaron los datos con éxito
     if success:
