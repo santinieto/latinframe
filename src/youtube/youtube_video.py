@@ -16,7 +16,7 @@ from datetime import datetime
 from bs4 import BeautifulSoup
 
 # Imports locales
-from src.utils.utils import get_http_response, get_formatted_date, clean_and_parse_number, getenv, get_time_len
+from src.utils.utils import get_http_response, get_formatted_date, clean_and_parse_number, getenv, get_time_len, is_video_online
 from src.logger.logger import Logger
 from src.youtube.youtube_api import YoutubeAPI
 
@@ -796,20 +796,26 @@ class YoutubeVideo:
         return
     
 if __name__ == "__main__":
-    # Crear una instancia de YoutubeVideo
-    video = YoutubeVideo(video_id='FybgNacJfY0')
+    # video_id = 'FybgNacJfY0' # No disponible IlNXWmr695Y
+    video_id = 'IlNXWmr695Y' # Disponible 
+    
+    if is_video_online(video_id):
+        # Crear una instancia de YoutubeVideo
+        video = YoutubeVideo(video_id=video_id)
 
-    # Simular que los datos ya están cargados
-    # Si está en True se acaba la ejecución del programa
-    video.data_loaded = False
+        # Simular que los datos ya están cargados
+        # Si está en True se acaba la ejecución del programa
+        video.data_loaded = False
 
-    # Llamar al método fetch_data
-    video.fetch_data(force_method='html')
-    success = video.fetch_status
+        # Llamar al método fetch_data
+        video.fetch_data(force_method='html')
+        success = video.fetch_status
 
-    # Verificar si se cargaron los datos con éxito
-    if success:
-        print("Los datos se cargaron con éxito.")
-        print(str(video))
+        # Verificar si se cargaron los datos con éxito
+        if success:
+            logger.info("Los datos se cargaron con éxito.")
+            logger.info(str(video))
+        else:
+            logger.info("Error al cargar los datos.")
     else:
-        print("Error al cargar los datos.")
+        logger.info('El video no esta online')

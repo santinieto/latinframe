@@ -16,7 +16,7 @@ from datetime import datetime
 from bs4 import BeautifulSoup
 
 # Imports locales
-from src.utils.utils import get_http_response, get_formatted_date, clean_and_parse_number, getenv, get_time_len
+from src.utils.utils import get_http_response, get_formatted_date, clean_and_parse_number, getenv, get_time_len, is_video_online
 from src.logger.logger import Logger
 from src.youtube.youtube_api import YoutubeAPI
 
@@ -799,24 +799,30 @@ if __name__ == "__main__":
     from src.utils.environment import set_environment
     set_environment('settings.json')
     
-    # Crear una instancia de YoutubeShort
-    short = YoutubeShort(short_id='2pDs7d8TjWE')
-
-    # Simular que los datos ya están cargados
-    # Si está en True se acaba la ejecución del programa
-    short.data_loaded = False
-
-    # Llamar al método fetch_data
-    short.fetch_data(force_method='html')
-
-    # Verificar si se cargaron los datos con éxito
-    if short.fetch_status:
-        print("Los datos se cargaron con éxito.")
-        print(str(short))
-    else:
-        print("Error al cargar los datos.")
+    short_id = 'xRMAxZECj44' # Disponible
+    # short_id = '2pDs7d8TjWE' # No disponible
     
-    # Guardo el short en la base da datos
-    from src.database.db import Database
-    with Database() as db:
-        db.insert_short_record( short.to_dict() )
+    if is_video_online(short_id):
+        # Crear una instancia de YoutubeShort
+        short = YoutubeShort(short_id=short_id)
+
+        # Simular que los datos ya están cargados
+        # Si está en True se acaba la ejecución del programa
+        short.data_loaded = False
+
+        # Llamar al método fetch_data
+        short.fetch_data(force_method='html')
+
+        # Verificar si se cargaron los datos con éxito
+        if short.fetch_status:
+            logger.info("Los datos se cargaron con éxito.")
+            logger.info(str(short))
+        else:
+            logger.info("Error al cargar los datos.")
+        
+        # # Guardo el short en la base da datos
+        # from src.database.db import Database
+        # with Database() as db:
+        #     db.insert_short_record( short.to_dict() )
+    else:
+        logger.info("El short no esta online")

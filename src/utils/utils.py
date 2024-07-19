@@ -756,6 +756,29 @@ def get_param(target='', default=None, args_pos=0, *args, **kwargs):
         # Capturar cualquier excepción y elevarla con un mensaje descriptivo
         raise ValueError(f"Error al obtener el parámetro: {str(e)}")
 
+def is_video_online(video_id):
+    """
+    Verifica si un video de YouTube está disponible usando el endpoint oEmbed.
+
+    :param video_id: str: ID del video de YouTube
+    :return: bool: True si el video está disponible, False en caso contrario
+    """
+    # Construir la URL usando el video ID proporcionado
+    url = f'https://www.youtube.com/oembed?url=http://www.youtube.com/watch?v={video_id}&format=json'
+    
+    # Realizar una solicitud GET a la URL
+    response = requests.get(url)
+
+    # Si la respuesta tiene un código de estado 200, el video está disponible
+    if response.status_code == 200:
+        return True
+    # Si la respuesta tiene un código de estado 403, el video no está disponible
+    elif response.status_code == 403:
+        return False
+    else:
+        # Puedes manejar otros códigos de estado si es necesario
+        return False
+
 ################################################################################
 # LLEGUE HASTA ACA CON LA OPTIMIZACION
 ################################################################################

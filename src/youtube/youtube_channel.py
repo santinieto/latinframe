@@ -13,7 +13,7 @@ import json
 from bs4 import BeautifulSoup
 
 # Imports locales
-from src.utils.utils import get_http_response, get_formatted_date, clean_and_parse_number, getenv
+from src.utils.utils import get_http_response, get_formatted_date, clean_and_parse_number, getenv, is_video_online
 from src.logger.logger import Logger
 from src.youtube.youtube_api import YoutubeAPI
 from src.database.db import Database
@@ -595,12 +595,15 @@ class YoutubeChannel:
             # Elimino duplicados y conformo la lista final
             shorts_ids = list(set(matches))
             
+            # Filtro los shorts que no estan online
+            filtered_shorts_ids = [x for x in shorts_ids if is_video_online(x)]
+            
             # Limito la cantidad de shorts
-            if len(shorts_ids) > self.n_shorts_fetch:
-                shorts_ids = shorts_ids[:self.n_shorts_fetch]
+            if len(filtered_shorts_ids) > self.n_shorts_fetch:
+                filtered_shorts_ids = filtered_shorts_ids[:self.n_shorts_fetch]
             
             # Devuelvo el resultado
-            return shorts_ids
+            return filtered_shorts_ids
         
         except Exception as e:
             # Registrar el error y devolver una lista vacía en caso de fallo
@@ -765,16 +768,19 @@ class YoutubeChannel:
             logger.warning(f"La entrada [{new_video_ids}] debe ser una cadena de caracteres o una lista. Tipo proporcionado: {type(new_video_ids)}")
             return
         
+        # Filtro los videos que no estan online
+        filtered_video_ids = [x for x in new_video_ids if is_video_online(x)]
+        
         # Defino el origen de los datos y los agrego a la lista correspondiente
         if source == 'database':
-            self.video_ids_list_db.extend(new_video_ids)
+            self.video_ids_list_db.extend(filtered_video_ids)
         elif source == 'constructor':
-            self.video_ids_list_constructor.extend(new_video_ids)
+            self.video_ids_list_constructor.extend(filtered_video_ids)
         else:
-            self.video_ids_list_others.extend(new_video_ids)
+            self.video_ids_list_others.extend(filtered_video_ids)
         
         # Actualizar la lista de IDs que no están en la base de datos
-        self.video_ids_list_not_in_db = [x for x in new_video_ids if x not in self.video_ids_list_db]
+        self.video_ids_list_not_in_db = [x for x in filtered_video_ids if x not in self.video_ids_list_db]
         
         # Muestro la lista de canales que no estan en la base de datos
         if self.DEBUG:
