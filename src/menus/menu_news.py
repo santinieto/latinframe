@@ -35,7 +35,7 @@ def menu_news(app):
         app.add_option("Periodicos", lambda: fetch_news_papers())
         app.add_option("Volver", lambda: app.main_menu())
     except AttributeError as e:
-        print(f"Error al configurar el menú de Noticias: {e}")
+        logger.info(f"Error al configurar el menú de Noticias: {e}")
 
 def fetch_all_news_data():
     # Definir la categoría de productos
@@ -95,7 +95,7 @@ def fetch_topics():
     with Database('latinframe.db') as db:
         topics = db.get_topics()
         for topic in topics:
-            print(topic)
+            logger.info(topic)
     pass
 
 def fetch_news_papers():
@@ -104,4 +104,4 @@ def fetch_news_papers():
         query = 'SELECT TOPIC FROM TOPICS'
         results = db.select(query)
         for result in results:
-            print(result[0])
+            logger.info(result[0])

@@ -189,6 +189,7 @@ class YoutubeManager:
     _instance = None
 
     # Configuraciones por defecto
+    DEFAULT_N_CHANNELS_FETCH = 10
     DEFAULT_ENABLE_MP = True
     DEFAULT_N_CORES = -1
     DEFAULT_DB_NAME = "latinframe.db"
@@ -213,6 +214,7 @@ class YoutubeManager:
             self.videos = []
             self.shorts = []
             self.playlists = []
+            self.n_channels_fetch = getenv('YOUTUBE_MANAGER_N_CHANNELS_FETCH', self.DEFAULT_N_CHANNELS_FETCH)
             self.enable_mp = getenv('ENABLE_MP', self.DEFAULT_ENABLE_MP)
             self.db_name = getenv('DB_NAME', self.DEFAULT_DB_NAME)
             self.n_cores = self.set_n_cores()
@@ -583,6 +585,10 @@ class YoutubeManager:
 
             # Agregar los canales a la lista channels si no están ya presentes
             for channel_id in channel_ids_from_db:
+                if self.n_channels_fetch >= 0 and len(self.channel_ids) >= self.n_channels_fetch:
+                    if self.DEBUG:
+                        logger.info(f'La lista de canales de YoutubeManager ya está llena.')
+                    break
                 if channel_id not in self.channel_ids:
                     self.channel_ids.append(channel_id)
                 else:

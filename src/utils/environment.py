@@ -69,11 +69,6 @@ def set_environment(filename=None, verbose=DEFAULT_ENVIRONMENT_VERBOSE):
     Parámetros:
     logger (Logger): Instancia de la clase Logger para manejar los mensajes de log.
     """
-    # Cargo el nombre del archivo si es pasado por afuera
-    if filename is None:
-        credentials_file_path = Path(os.environ["SOFT_UTILS"]) / 'credentials.json'
-    else:
-        credentials_file_path = Path(filename)
     
     # Obtener el directorio actual
     home = Path.cwd()
@@ -82,9 +77,16 @@ def set_environment(filename=None, verbose=DEFAULT_ENVIRONMENT_VERBOSE):
     os.environ["SOFT_HOME"] = str(home)
     os.environ["SOFT_RESULTS"] = str(home / 'results')
     os.environ["SOFT_UTILS"] = str(home / 'utils')
+    os.environ["SOFT_EXCLUDED"] = str(home / 'excluded')
     os.environ["SOFT_LOGS"] = str(home / 'logs')
     os.environ["SOFT_MP_ENABLE"] = 'True'
     os.environ["SOFT_MP_NTHREADS"] = str(max(1, os.cpu_count() // 2))
+    
+    # Cargo el nombre del archivo si es pasado por afuera
+    if filename is None:
+        credentials_file_path = Path(os.environ["SOFT_HOME"]) / 'settings.json'
+    else:
+        credentials_file_path = Path(filename)
 
     # Cargar las variables desde el archivo JSON
     load_json(filename=str(credentials_file_path))

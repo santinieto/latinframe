@@ -7,6 +7,8 @@ __pycache__/
 db_backups/
 drivers/
 results/
+utils/*.dat
+excluded/*.dat
 *.db
 
 # C extensions

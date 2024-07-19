@@ -106,9 +106,9 @@ class ProductManager:
     DEBUG = True
     
     DEFAULT_TOPICS = [
-        'juguetes',
-        # 'disney',
-        # 'pixar',
+        'juguetes', 'disney', 'pixar',
+        'cocomelon', 'netflix', 'amazon',
+        'disney', 'pixar', 'toy story'
     ]
 
     ############################################################################

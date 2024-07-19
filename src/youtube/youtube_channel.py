@@ -13,7 +13,7 @@ import json
 from bs4 import BeautifulSoup
 
 # Imports locales
-from src.utils.utils import get_http_response, get_formatted_date, clean_and_parse_number, getenv, is_video_online
+from src.utils.utils import get_http_response, get_formatted_date, clean_and_parse_number, getenv, is_video_online, fetch_excluded_ids
 from src.logger.logger import Logger
 from src.youtube.youtube_api import YoutubeAPI
 from src.database.db import Database
@@ -93,11 +93,26 @@ class YoutubeChannel:
         # le da un ID de canal a la clase, lo uso
         if channel_id is not None:
             self.channel_id = channel_id
-        
+
         # Si hay un diccionario para cargar datos, lo uso
         if info_dict:
             # Carga los valores desde un diccionario si se proporciona
             self.load_from_dict(info_dict)
+        
+        if self.channel_id:
+            # Obtengo la lista de IDs excluidos
+            self.excluded_video_ids = fetch_excluded_ids(f'{self.channel_id}_video', 'get')
+            self.excluded_short_ids = fetch_excluded_ids(f'{self.channel_id}_short', 'get')
+            self.excluded_playlist_ids = fetch_excluded_ids(f'{self.channel_id}_playlist', 'get')
+                
+            if self.DEBUG:
+                logger.info(f'Lista de videos excluidos para el canal [{self.channel_id}]: {self.excluded_video_ids}')
+                logger.info(f'Lista de shorts excluidos para el canal [{self.channel_id}]: {self.excluded_short_ids}')
+                logger.info(f'Lista de playlists excluidos para el canal [{self.channel_id}]: {self.excluded_playlist_ids}')
+        else:
+            self.excluded_video_ids = []
+            self.excluded_short_ids = []
+            self.excluded_playlist_ids = []
 
     def set_default_values(self):
         """Establece los valores por defecto de los atributos de la clase."""
@@ -498,23 +513,16 @@ class YoutubeChannel:
         
         try:
             # Realiza la búsqueda de los IDs de videos en el contenido HTML
-            self.video_id_list = re.findall(pattern, self.html_content)
-            # Elimina duplicados
-            self.video_id_list = list(set(self.video_id_list))
+            video_id_list = re.findall(pattern, self.html_content)
             
-            # Limita la lista de IDs de videos al número máximo especificado
-            if len(self.video_id_list) > self.n_videos_fetch:
-                self.video_id_list = self.video_id_list[:self.n_videos_fetch]
-                
-                if self.DEBUG:
-                    logger.info(f'Se limito la cantidad de videos a {self.n_videos_fetch} para el canal [{self.channel_id}]')
+            self.add_video_ids_to_list(video_id_list, 'class')
             
             if self.DEBUG:
-                logger.info("Lista de IDs de videos obtenida con éxito.")
+                logger.info(f"Lista de IDs de videos obtenida con éxito mediante contenido HTML para el canal [{self.channel_id}].")
         except Exception as e:
             # Si ocurre un error, registra el mensaje de error y establece la lista de IDs como vacía
             self.video_id_list = []
-            logger.error(f"No se pudo obtener la lista de IDs de videos: {e}")
+            logger.error(f"No se pudo obtener la lista de IDs de videos para el canal [{self.channel_id}]. Error: {e}")
         
         return self.DEFAULT_VALUES['video_id_list']
     
@@ -556,6 +564,18 @@ class YoutubeChannel:
             # Encuentro las playlists que no están en la base de datos
             new_playlists = [p for p in matches if p not in db_playlist_ids]
             
+            # Elimino los IDs que estan en la lista de excluidos
+            new_playlists = [x for x in new_playlists if x not in self.excluded_playlist_ids]
+            
+            # FIXME: Aca deberia incluir las playlists que tienen fallas en la
+            # base de datos
+            # Filtro los shorts que no estan online
+            # online_shorts = [x for x in shorts_ids if is_video_online(x)]
+            
+            # # Los shorts que no estan disponibles los agrego a una base de datos
+            # no_online_shorts = [x for x in shorts_ids if x not in online_shorts]
+            # fetch_excluded_ids(f'{self.channel_id}_short', 'add', no_online_shorts)
+            
             # Limito la cantidad de playlists si es necesario
             if len(new_playlists) > self.n_playlists_fetch:
                 new_playlists = new_playlists[:self.n_playlists_fetch]
@@ -595,15 +615,24 @@ class YoutubeChannel:
             # Elimino duplicados y conformo la lista final
             shorts_ids = list(set(matches))
             
-            # Filtro los shorts que no estan online
-            filtered_shorts_ids = [x for x in shorts_ids if is_video_online(x)]
+            # Elimino los IDs que estan en la lista de excluidos
+            shorts_ids = [x for x in shorts_ids if x not in self.excluded_short_ids]
             
+            # Filtro los shorts que no estan online
+            online_shorts = [x for x in shorts_ids if is_video_online(x)]
+            
+            # Los shorts que no estan disponibles los agrego a una base de datos
+            no_online_shorts = [x for x in shorts_ids if x not in online_shorts]
+            if no_online_shorts:
+                fetch_excluded_ids(f'{self.channel_id}_short', 'add', no_online_shorts)
+                logger.info(f'Los siguientes shorts del canal [{self.channel_id}] no estan online y van a ser excluidos: {no_online_shorts}.')
+        
             # Limito la cantidad de shorts
-            if len(filtered_shorts_ids) > self.n_shorts_fetch:
-                filtered_shorts_ids = filtered_shorts_ids[:self.n_shorts_fetch]
+            if len(online_shorts) > self.n_shorts_fetch:
+                online_shorts = online_shorts[:self.n_shorts_fetch]
             
             # Devuelvo el resultado
-            return filtered_shorts_ids
+            return online_shorts
         
         except Exception as e:
             # Registrar el error y devolver una lista vacía en caso de fallo
@@ -767,20 +796,30 @@ class YoutubeChannel:
             # Si new_video_ids no es una cadena o una lista, emitir un mensaje de advertencia y salir
             logger.warning(f"La entrada [{new_video_ids}] debe ser una cadena de caracteres o una lista. Tipo proporcionado: {type(new_video_ids)}")
             return
+            
+        # Elimino los IDs que estan en la lista de excluidos
+        new_video_ids = [x for x in new_video_ids if x not in self.excluded_video_ids]
         
         # Filtro los videos que no estan online
-        filtered_video_ids = [x for x in new_video_ids if is_video_online(x)]
+        online_videos = [x for x in new_video_ids if is_video_online(x)]
+        
+        # Los videos que no estan disponibles los agrego a una base de datos
+        no_online_videos = [x for x in new_video_ids if x not in online_videos]
+        
+        if no_online_videos:
+            fetch_excluded_ids(f'{self.channel_id}_video', 'add', no_online_videos)
+            logger.info(f'Los siguientes videos del canal [{self.channel_id}] no estan online y van a ser excluidos: {no_online_videos}.')
         
         # Defino el origen de los datos y los agrego a la lista correspondiente
         if source == 'database':
-            self.video_ids_list_db.extend(filtered_video_ids)
+            self.video_ids_list_db.extend(online_videos)
         elif source == 'constructor':
-            self.video_ids_list_constructor.extend(filtered_video_ids)
+            self.video_ids_list_constructor.extend(online_videos)
         else:
-            self.video_ids_list_others.extend(filtered_video_ids)
+            self.video_ids_list_others.extend(online_videos)
         
         # Actualizar la lista de IDs que no están en la base de datos
-        self.video_ids_list_not_in_db = [x for x in filtered_video_ids if x not in self.video_ids_list_db]
+        self.video_ids_list_not_in_db = [x for x in online_videos if x not in self.video_ids_list_db]
         
         # Muestro la lista de canales que no estan en la base de datos
         if self.DEBUG:

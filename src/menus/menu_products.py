@@ -38,7 +38,7 @@ def menu_products(app):
         app.add_option("Prodcutos de Amazon", lambda: fetch_products_data(sel='amazon'))
         app.add_option("Volver", lambda: app.main_menu())
     except AttributeError as e:
-        print(f"Error al configurar el menú de Productos: {e}")
+        logger.info(f"Error al configurar el menú de Productos: {e}")
 
 def fetch_products_data(sel='all'):
     # Definir la categoría de productos
@@ -82,11 +82,11 @@ def fetch_products_data(sel='all'):
             'alibaba': 'Se obtuvieron los productos para la plataforma Alibaba.'
         }
         
-        print(messages[sel])
+        logger.info(messages[sel])
 
 def fetch_topics():
     with Database('latinframe.db') as db:
         topics = db.get_topics()
         for topic in topics:
-            print(topic)
+            logger.info(topic)
     pass

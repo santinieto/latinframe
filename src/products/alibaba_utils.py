@@ -21,7 +21,7 @@ from datetime import datetime, timedelta
 # Imports locales
 from src.logger.logger import Logger
 from src.products.product import Product
-from src.utils.utils import get_http_response, getenv
+from src.utils.utils import get_http_response, getenv, fetch_excluded_topics
 
 ################################################################################
 # Genero una instancia del Logger
@@ -63,13 +63,6 @@ class AlibabaProductListings:
         'Pixar'
     ]
     
-    EXCLUDE_LIST = [
-        'leroyaumedesenfants',
-        'famosainternational',
-        'littlebabybumlullabies',
-        'cocomelonrussian',
-    ]
-    
     ############################################################################
     # Metodos de incializacion
     ############################################################################
@@ -89,6 +82,12 @@ class AlibabaProductListings:
             self.enable_mp = getenv('ENABLE_MP', self.DEFAULT_ENABLE_MP)
             self.n_cores = self.set_n_cores()
             
+            self.excluded_topics = fetch_excluded_topics(platform='alibaba', method='get')
+            self.failed_topics = []
+            
+            # Muestro en pantalla las tematicas excluidas
+            logger.info(f'Lista de tematicas excluidas: {self.excluded_topics}.')
+
             # Defino una lista por defecto y
             # agrego las tematicas de interes
             self.add_topics(self.DEFAULT_TOPICS + topics)
@@ -131,7 +130,7 @@ class AlibabaProductListings:
             topics = [x.lower() for x in topics]
             
             # Filtro las tematicas a excluir para este sitio
-            filtered_topics = [x for x in topics if x not in self.EXCLUDE_LIST]
+            filtered_topics = [x for x in topics if x not in self.excluded_topics]
 
             # Agrego las tematicas a la lista y me aseguro que no haya repetidos
             self.topics = list(set(self.topics + filtered_topics))
@@ -194,8 +193,10 @@ class AlibabaProductListings:
                             logger.info(f'Contenido HTML obtenido para la tematica [{topic}].')
                         
                     else:
-                        self.listings[topic]['html_content'] = None
-                        logger.error(f"Error al obtener el contenido HTML para [{topic}]: No se pudo obtener respuesta HTTP desde [{url}]")
+                        self.failed_topics.append(topic)
+                        
+                        if self.DEBUG:
+                            logger.error(f"Error al obtener el contenido HTML para [{topic}]: No se pudo obtener respuesta HTTP desde [{url}]")
                         
                 else:
                     logger.error(f"No se encontró la clave [{topic}] en el diccionario de listados.")
@@ -204,6 +205,12 @@ class AlibabaProductListings:
                 logger.error(f"Error al obtener el contenido HTML para [{topic}]. Error: {e}")
             except Exception as e:
                 logger.error(f"Error inesperado al obtener el contenido HTML para [{topic}]. Error: {e}")
+        
+        # Elimino las tematicas que fallaron
+        for topic in self.failed_topics:
+            del self.listings[topic]
+            del self.urls[topic]
+        self.topics = [x for x in self.topics if x not in self.failed_topics]
 
     def find_items(self):
         """
@@ -282,7 +289,8 @@ class AlibabaProductListings:
                 tot_items = tot_items + items
             else:
                 topic = listing.get('topic')
-                logger.warning(f'No se obtuvieron productos para la tematica [{topic}]')
+                logger.warning(f'No se obtuvieron productos para la tematica [{topic}].\nSe va a excluir la tematica en proximos procesamientos.')
+                self.failed_topics.append(topic)
         return tot_items
     
     def fetch_data(self):
@@ -292,9 +300,14 @@ class AlibabaProductListings:
         self.generate_urls()
         self.fetch_html_content()
         self.find_items()
+        items = self.get_items()
         # self.show_items_content()
         
-        return self.get_items()
+        # Agrego los temas que fallaron a la base de datos
+        fetch_excluded_topics(platform='alibaba', method='add', topics=self.failed_topics)
+        logger.info(f'Lista de tematicas que fallaron: {self.failed_topics}.\nSe agregaron esos temas a la lista de temas excluidos')
+
+        return items
 
 class AlibabaProduct(Product):
     def __init__(self, product_id=None, info_dict=None):

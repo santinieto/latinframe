@@ -779,6 +779,144 @@ def is_video_online(video_id):
         # Puedes manejar otros códigos de estado si es necesario
         return False
 
+def fetch_excluded_topics(platform, method, topics=None):
+    """
+    Gestiona las temáticas excluidas para diferentes plataformas.
+
+    Args:
+    platform (str): Nombre de la plataforma (meli, amazon, ebay, etc.).
+    method (str): Método a realizar ('get', 'add', 'remove').
+    topics (str o list, optional): Temática(s) a agregar o eliminar. Requerido para 'add' y 'remove'.
+
+    Returns:
+    list: Lista de temáticas excluidas (solo para el método 'get').
+
+    Raises:
+    ValueError: Si falta el argumento 'topic' para 'add' o 'remove', o si se proporciona un método inválido.
+    """
+    if topics:
+        if isinstance(topics, str):
+            topics = [topics]
+        elif not isinstance(topics, list):
+            raise ValueError("El argumento 'topic' debe ser una cadena o una lista de cadenas")
+    
+    if method in ['add', 'remove']:
+        if len(topics) <= 0:
+            return
+            
+    file_path = os.path.join(os.environ.get("SOFT_UTILS", r'utils/'), f"excluded_topics_{platform}.dat")
+    
+    if method == 'get':
+        # Leer y devolver la lista de temáticas excluidas desde el archivo
+        if os.path.exists(file_path):
+            with open(file_path, 'r') as file:
+                current_topics = [line.strip() for line in file]
+            unique_topics = sorted(set(current_topics))
+            return unique_topics
+        else:
+            return []
+    
+    elif method == 'add':
+        # Agregar una nueva temática excluida al archivo
+        if topics:
+            current_topics = []
+            if os.path.exists(file_path):
+                with open(file_path, 'r') as file:
+                    current_topics = [line.strip() for line in file]
+            combined_topics = sorted(set(current_topics + topics))
+            with open(file_path, 'w') as file:
+                for topic in combined_topics:
+                    file.write(topic + '\n')
+        else:
+            raise ValueError("Se debe proporcionar una temática para el método 'add'")
+    
+    elif method == 'remove':
+        # Eliminar temática(s) excluida(s) del archivo y ordenarlas
+        if topics:
+            if os.path.exists(file_path):
+                with open(file_path, 'r') as file:
+                    current_topics = [line.strip() for line in file]
+                updated_topics = sorted([topic for topic in current_topics if topic not in topics])
+                with open(file_path, 'w') as file:
+                    for topic in updated_topics:
+                        file.write(topic + '\n')
+            else:
+                raise ValueError(f"No existe el archivo: {file_path}")
+        else:
+            raise ValueError("Se debe proporcionar una temática para el método 'remove'")
+    
+    else:
+        raise ValueError("Método inválido. Use 'get', 'add' o 'remove'.")
+
+def fetch_excluded_ids(category, method, ids=None):
+    """
+    Gestiona los IDs excluidos para diferentes categorías.
+
+    Args:
+    category (str): Nombre de la categoría (video, playlist, short, channel, etc.).
+    method (str): Método a realizar ('get', 'add', 'remove').
+    ids (str o list, optional): ID(s) a agregar o eliminar. Requerido para 'add' y 'remove'.
+
+    Returns:
+    list: Lista de IDs excluidos (solo para el método 'get').
+
+    Raises:
+    ValueError: Si falta el argumento 'ids' para 'add' o 'remove', o si se proporciona un método inválido.
+    """
+    if ids:
+        if isinstance(ids, str):
+            ids = [ids]
+        elif not isinstance(ids, list):
+            raise ValueError("El argumento 'ids' debe ser una cadena o una lista de cadenas")
+    
+    if method in ['add', 'remove']:
+        if len(ids) <= 0:
+            return
+            
+    file_path = os.path.join(os.environ.get("SOFT_UTILS", r'utils/'), f"excluded_{category}_ids.dat")
+    
+    if method == 'get':
+        # Leer y devolver la lista de IDs excluidos desde el archivo, ordenados alfabéticamente
+        if os.path.exists(file_path):
+            with open(file_path, 'r') as file:
+                current_ids = [line.strip() for line in file]
+            unique_ids = sorted(set(current_ids))
+            return unique_ids
+        else:
+            return []
+    
+    elif method == 'add':
+        # Agregar nuevo(s) ID(s) excluido(s) al archivo y ordenarlos
+        if ids:
+            current_ids = []
+            if os.path.exists(file_path):
+                with open(file_path, 'r') as file:
+                    current_ids = [line.strip() for line in file]
+            combined_ids = sorted(set(current_ids + ids))
+            with open(file_path, 'w') as file:
+                for id in combined_ids:
+                    file.write(id + '\n')
+        else:
+            raise ValueError("Se debe proporcionar un ID o lista de IDs para el método 'add'")
+    
+    elif method == 'remove':
+        # Eliminar ID(s) excluido(s) del archivo y ordenarlos
+        if ids:
+            if os.path.exists(file_path):
+                with open(file_path, 'r') as file:
+                    current_ids = [line.strip() for line in file]
+                updated_ids = sorted([id for id in current_ids if id not in ids])
+                with open(file_path, 'w') as file:
+                    for id in updated_ids:
+                        file.write(id + '\n')
+            else:
+                raise ValueError(f"No existe el archivo: {file_path}")
+        else:
+            raise ValueError("Se debe proporcionar un ID o lista de IDs para el método 'remove'")
+    
+    else:
+        raise ValueError("Método inválido. Use 'get', 'add' o 'remove'.")
+
 ################################################################################
 # LLEGUE HASTA ACA CON LA OPTIMIZACION
 ################################################################################
