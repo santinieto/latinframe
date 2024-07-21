@@ -84,7 +84,7 @@ def set_environment(filename=None, verbose=DEFAULT_ENVIRONMENT_VERBOSE):
     
     # Cargo el nombre del archivo si es pasado por afuera
     if filename is None:
-        credentials_file_path = Path(os.environ["SOFT_HOME"]) / 'settings.json'
+        credentials_file_path = Path(os.environ["SOFT_UTILS"]) / 'settings.json'
     else:
         credentials_file_path = Path(filename)
 
@@ -105,17 +105,17 @@ def set_environment(filename=None, verbose=DEFAULT_ENVIRONMENT_VERBOSE):
             logger.info(f'Se ha establecido la variable de entorno [EMAIL_PASSWORD] : [{os.environ["EMAIL_PASSWORD"]}]')
             logger.info(f'Se ha establecido la variable de entorno [EMAIL_PLATFORM] : [{os.environ["EMAIL_PLATFORM"]}]')
             logger.info('Variables de entorno cargadas exitosamente.')
-    except FileNotFoundError:
+    except FileNotFoundError as e:
         os.environ["EMAIL_ADRESS"] = ''
         os.environ["EMAIL_PASSWORD"] = ''
         os.environ["EMAIL_PLATFORM"] = ''
-        msg = f'El archivo de credenciales {credentials_file_path} no fue encontrado.'
+        msg = f'El archivo de credenciales {credentials_file_path} no fue encontrado. Error: {e}'
         logger.error(msg)
-    except json.JSONDecodeError:
+    except json.JSONDecodeError as e:
         os.environ["EMAIL_ADRESS"] = ''
         os.environ["EMAIL_PASSWORD"] = ''
         os.environ["EMAIL_PLATFORM"] = ''
-        msg = f'No se pudo decodificar el contenido JSON del archivo {credentials_file_path}.'
+        msg = f'No se pudo decodificar el contenido JSON del archivo {credentials_file_path}. Error: {e}'
         logger.error(msg)
     except Exception as e:
         os.environ["EMAIL_ADRESS"] = ''

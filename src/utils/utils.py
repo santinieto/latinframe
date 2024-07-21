@@ -804,7 +804,7 @@ def fetch_excluded_topics(platform, method, topics=None):
         if len(topics) <= 0:
             return
             
-    file_path = os.path.join(os.environ.get("SOFT_UTILS", r'utils/'), f"excluded_topics_{platform}.dat")
+    file_path = os.path.join(os.environ.get("SOFT_EXCLUDED", r'excluded/'), f"excluded_topics_{platform}.dat")
     
     if method == 'get':
         # Leer y devolver la lista de temáticas excluidas desde el archivo
@@ -873,7 +873,7 @@ def fetch_excluded_ids(category, method, ids=None):
         if len(ids) <= 0:
             return
             
-    file_path = os.path.join(os.environ.get("SOFT_UTILS", r'utils/'), f"excluded_{category}_ids.dat")
+    file_path = os.path.join(os.environ.get("SOFT_EXCLUDED", r'excluded/'), f"excluded_{category}_ids.dat")
     
     if method == 'get':
         # Leer y devolver la lista de IDs excluidos desde el archivo, ordenados alfabéticamente

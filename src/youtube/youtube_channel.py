@@ -170,7 +170,9 @@ class YoutubeChannel:
             f"- Suscriptores diarios del canal de YouTube: {self.daily_subs}\n"
             f"- Lista de IDs de video del canal de YouTube: {self.video_id_list}\n"
             f"- Subcanales del canal de YouTube: {self.subchannels}\n"
+            f"- Cantidad de playlists a buscar: {self.n_playlists_fetch}\n"
             f"- Listas de reproducción del canal de YouTube: {self.playlist_id_list}\n"
+            f"- Cantidad de shorts a buscar: {self.n_shorts_fetch}\n"
             f"- Shorts del canal de YouTube: {self.short_id_list}\n"
         )
         return info_str
@@ -563,9 +565,11 @@ class YoutubeChannel:
             
             # Encuentro las playlists que no están en la base de datos
             new_playlists = [p for p in matches if p not in db_playlist_ids]
+            old_playlists = [p for p in matches if p     in db_playlist_ids]
             
             # Elimino los IDs que estan en la lista de excluidos
-            new_playlists = [x for x in new_playlists if x not in self.excluded_playlist_ids]
+            filtered_new_playlists = [x for x in new_playlists if x not in self.excluded_playlist_ids]
+            filtered_old_playlists = [x for x in old_playlists if x not in self.excluded_playlist_ids]
             
             # FIXME: Aca deberia incluir las playlists que tienen fallas en la
             # base de datos
@@ -576,12 +580,12 @@ class YoutubeChannel:
             # no_online_shorts = [x for x in shorts_ids if x not in online_shorts]
             # fetch_excluded_ids(f'{self.channel_id}_short', 'add', no_online_shorts)
             
-            # Limito la cantidad de playlists si es necesario
-            if len(new_playlists) > self.n_playlists_fetch:
-                new_playlists = new_playlists[:self.n_playlists_fetch]
-            
             # Añado las playlists de la base de datos al final de la lista
-            final_playlist_ids = new_playlists + list(db_playlist_ids)
+            final_playlist_ids = filtered_new_playlists + filtered_old_playlists
+            
+            # Limito la cantidad de playlists si es necesario
+            if len(final_playlist_ids) > self.n_playlists_fetch:
+                final_playlist_ids = final_playlist_ids[:self.n_playlists_fetch]
             
             # Devuelvo el resultado sin repeticiones
             return final_playlist_ids
@@ -607,32 +611,52 @@ class YoutubeChannel:
         
             # Guardo el contenido HTML
             # self.save_html_content(tmp_html_content)
-
+            
+            # Obtengo los shorts que estan en la base de datos
+            with Database() as db:
+                query = 'SELECT DISTINCT SHORT_ID FROM SHORT WHERE CHANNEL_ID = "{}"'.format(self.channel_id)
+                results = db.select(query,())
+                if results:
+                    db_short_ids = set(x[0] for x in results)
+                    if self.DEBUG:
+                        logger.info('Shorts en la base de datos: {}'.format(db_short_ids))
+                else:
+                    db_short_ids = set()
+            
             # Expresión regular para buscar browseEndpoint
             regex = r'"videoId":"(.*?)"'
             matches = re.findall(regex, tmp_html_content)
             
             # Elimino duplicados y conformo la lista final
-            shorts_ids = list(set(matches))
+            matches = list(dict.fromkeys(matches))
             
+            # Defino cuales son nuevos y cuales viejos
+            new_short_ids = [x for x in matches if x not in db_short_ids]
+            old_short_ids = [x for x in matches if x     in db_short_ids]
+        
             # Elimino los IDs que estan en la lista de excluidos
-            shorts_ids = [x for x in shorts_ids if x not in self.excluded_short_ids]
+            filtered_new_short_ids = [x for x in new_short_ids if x not in self.excluded_short_ids]
+            filtered_old_short_ids = [x for x in old_short_ids if x not in self.excluded_short_ids]
             
             # Filtro los shorts que no estan online
-            online_shorts = [x for x in shorts_ids if is_video_online(x)]
+            new_online_shorts = [x for x in filtered_new_short_ids if is_video_online(x)]
+            old_online_shorts = [x for x in filtered_old_short_ids if is_video_online(x)]
             
             # Los shorts que no estan disponibles los agrego a una base de datos
-            no_online_shorts = [x for x in shorts_ids if x not in online_shorts]
+            no_online_shorts = [x for x in filtered_new_short_ids if x not in new_online_shorts] + [x for x in filtered_old_short_ids if x not in old_online_shorts]
             if no_online_shorts:
                 fetch_excluded_ids(f'{self.channel_id}_short', 'add', no_online_shorts)
                 logger.info(f'Los siguientes shorts del canal [{self.channel_id}] no estan online y van a ser excluidos: {no_online_shorts}.')
-        
+            
+            # Armo la lista de IDs final
+            final_short_ids = new_online_shorts + old_online_shorts
+            
             # Limito la cantidad de shorts
-            if len(online_shorts) > self.n_shorts_fetch:
-                online_shorts = online_shorts[:self.n_shorts_fetch]
+            if len(final_short_ids) > self.n_shorts_fetch:
+                final_short_ids = final_short_ids[:self.n_shorts_fetch]
             
             # Devuelvo el resultado
-            return online_shorts
+            return final_short_ids
         
         except Exception as e:
             # Registrar el error y devolver una lista vacía en caso de fallo
@@ -808,7 +832,7 @@ class YoutubeChannel:
         
         if no_online_videos:
             fetch_excluded_ids(f'{self.channel_id}_video', 'add', no_online_videos)
-            logger.info(f'Los siguientes videos del canal [{self.channel_id}] no estan online y van a ser excluidos: {no_online_videos}.')
+            logger.info(f'Los siguientes videos del canal [{self.channel_id}] de la fuente [{source}] no estan online y van a ser excluidos: {no_online_videos}.')
         
         # Defino el origen de los datos y los agrego a la lista correspondiente
         if source == 'database':

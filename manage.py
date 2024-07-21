@@ -7,7 +7,7 @@ def main():
     Función principal para crear y ejecutar la aplicación de la interfaz gráfica.
     """
     # Seteo las variables de entorno
-    set_environment(filename='settings.json')
+    set_environment()
     
     try:
         # Creo la App para la interfaz gráfica

@@ -7,9 +7,11 @@ __pycache__/
 db_backups/
 drivers/
 results/
+share/
 utils/*.dat
 excluded/*.dat
 *.db
+*.dll
 
 # C extensions
 *.so
