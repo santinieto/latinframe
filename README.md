@@ -21,13 +21,17 @@ Sigue las instrucciones del instalador para completar la instalación.
 Es recomendable crear un entorno virtual para gestionar las dependencias del proyecto. Puedes hacerlo con `venv` o con `conda` si usas Anaconda.
 
 ### Usando venv
+```
 python -m venv latinframe-env
 source latinframe-env/bin/activate  # En macOS/Linux
 latinframe-env\Scripts\activate  # En Windows
+```
 
 ### Usando Anaconda
+```
 conda create --name latinframe-env python=3.8
 conda activate latinframe-env
+```
 
 ## Instalación de Dependencias
 
@@ -35,27 +39,33 @@ Ahora se pueden instalar las librerias necesarias del proyecto. Podemos instalar
 
 Actualizar pip:
 
-> python.exe -m pip install --upgrade pip
-> pip install --upgrade pip setuptools wheel
+```
+python.exe -m pip install --upgrade pip
+pip install --upgrade pip setuptools wheel
+```
 
 Instalar mediante requirements:
 
-> pip install -r requirements.txt
+```
+pip install -r requirements.txt
+```
 
 Instalar manualmente:
 
-> pip install numpy
-> pip install python-dateutil
-> pip install pytz
-> pip install ninja
-> pip install requests
-> pip install beautifulsoup4
-> pip install cython
->>>> pip install pandas
-> pip install matplotlib
-> ...
+```
+pip install numpy
+pip install python-dateutil
+pip install pytz
+pip install ninja
+pip install requests
+pip install beautifulsoup4
+pip install cython
+pip install pandas
+pip install matplotlib
+```
 
 ## Estructura del proyecto
+```
 /latinframe
 │
 ├── src/                          # Directorio con el código fuente
@@ -108,6 +118,7 @@ Instalar manualmente:
 ├── requirements.txt              # Lista de dependencias del proyecto
 ├── setup.py                      # Archivo para la compilacion del proyecto
 └── README.md                     # Archivo con la documentación del proyecto
+```
 
 # Instalacion del proyecto (todavia en Beta)
 
@@ -115,7 +126,9 @@ Moverse a la ruta raiz del proyecto
 
 Ejecutar el comando
 
-> python setup.py build
+```
+python setup.py build
+```
 
 Esto va a crear un archivo .exe
 
@@ -125,7 +138,9 @@ NOTA: Al ejecutar el archivo compilado, el multiprocesos se rompe.
 
 Para iniciar la aplicación, asegúrate de que estás en el directorio latinframe y ejecuta:
 
-> python manage.py
+```
+python manage.py
+```
 
 # Configuraciones
 
