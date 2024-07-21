@@ -12,6 +12,7 @@ utils/*.dat
 excluded/*.dat
 *.db
 *.dll
+*.exe
 
 # C extensions
 *.so
